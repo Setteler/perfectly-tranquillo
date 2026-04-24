@@ -17,55 +17,82 @@ private val fontProvider = GoogleFont.Provider(
     certificates = R.array.com_google_android_gms_fonts_certs
 )
 
+// --- Font families -------------------------------------------------------
+
+// New default display font (handwritten casual)
+private val Caveat = FontFamily(
+    Font(googleFont = GoogleFont("Caveat"), fontProvider = fontProvider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("Caveat"), fontProvider = fontProvider, weight = FontWeight.Medium)
+)
+
+// New default body font
+private val Nunito = FontFamily(
+    Font(googleFont = GoogleFont("Nunito"), fontProvider = fontProvider, weight = FontWeight.Light),
+    Font(googleFont = GoogleFont("Nunito"), fontProvider = fontProvider, weight = FontWeight.Normal),
+    Font(googleFont = GoogleFont("Nunito"), fontProvider = fontProvider, weight = FontWeight.Medium),
+    Font(googleFont = GoogleFont("Nunito"), fontProvider = fontProvider, weight = FontWeight.SemiBold)
+)
+
+// Kept wired for the #7 font-picker (not used in default Typography)
+@Suppress("unused")
 private val Fraunces = FontFamily(
     Font(googleFont = GoogleFont("Fraunces"), fontProvider = fontProvider, weight = FontWeight.Normal, style = FontStyle.Italic),
     Font(googleFont = GoogleFont("Fraunces"), fontProvider = fontProvider, weight = FontWeight.Normal, style = FontStyle.Normal),
     Font(googleFont = GoogleFont("Fraunces"), fontProvider = fontProvider, weight = FontWeight.Medium, style = FontStyle.Italic)
 )
 
+@Suppress("unused")
 private val Quicksand = FontFamily(
     Font(googleFont = GoogleFont("Quicksand"), fontProvider = fontProvider, weight = FontWeight.Normal),
     Font(googleFont = GoogleFont("Quicksand"), fontProvider = fontProvider, weight = FontWeight.Medium),
     Font(googleFont = GoogleFont("Quicksand"), fontProvider = fontProvider, weight = FontWeight.SemiBold)
 )
 
+// Mono kept (used later for numeric readouts)
+@Suppress("unused")
 private val JetBrainsMono = FontFamily(
     Font(googleFont = GoogleFont("JetBrains Mono"), fontProvider = fontProvider, weight = FontWeight.Normal)
 )
 
+// --- Typography ----------------------------------------------------------
+// Caveat runs visually small, so bump sizes ~1.25x a normal serif.
+
 val PerfectlyTranquilloTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = Fraunces, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal,
-        fontSize = 34.sp, letterSpacing = (-0.005).em
+        fontFamily = Caveat, fontWeight = FontWeight.Medium,
+        fontSize = 36.sp, lineHeight = (36 * 1.05f).sp, letterSpacing = 0.sp
     ),
     displayMedium = TextStyle(
-        fontFamily = Fraunces, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal,
-        fontSize = 28.sp, letterSpacing = (-0.005).em
+        fontFamily = Caveat, fontWeight = FontWeight.Medium,
+        fontSize = 28.sp, lineHeight = (28 * 1.05f).sp, letterSpacing = 0.sp
     ),
     displaySmall = TextStyle(
-        fontFamily = Fraunces, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal,
-        fontSize = 22.sp, letterSpacing = (-0.005).em
+        fontFamily = Caveat, fontWeight = FontWeight.Medium,
+        fontSize = 22.sp, lineHeight = (22 * 1.05f).sp, letterSpacing = 0.sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = Fraunces, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Normal,
-        fontSize = 20.sp
+        fontFamily = Caveat, fontWeight = FontWeight.Medium,
+        fontSize = 22.sp, lineHeight = (22 * 1.05f).sp
     ),
     titleLarge = TextStyle(
-        fontFamily = Quicksand, fontWeight = FontWeight.SemiBold, fontSize = 18.sp
+        fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 18.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = Quicksand, fontWeight = FontWeight.Normal, fontSize = 16.sp
+        fontFamily = Nunito, fontWeight = FontWeight.Normal, fontSize = 14.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = Quicksand, fontWeight = FontWeight.Normal, fontSize = 14.sp
+        fontFamily = Nunito, fontWeight = FontWeight.Normal, fontSize = 13.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = Quicksand, fontWeight = FontWeight.Medium, fontSize = 14.sp
+        fontFamily = Nunito, fontWeight = FontWeight.Medium, fontSize = 14.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = Quicksand, fontWeight = FontWeight.Medium, fontSize = 12.sp
+        fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 12.sp,
+        letterSpacing = 0.1.em
     ),
+    // Eyebrow: Nunito 600, 11sp, tracked. All-caps applied at callsite.
     labelSmall = TextStyle(
-        fontFamily = JetBrainsMono, fontWeight = FontWeight.Normal, fontSize = 11.sp
+        fontFamily = Nunito, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+        letterSpacing = 0.18.em
     )
 )
