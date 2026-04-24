@@ -3,6 +3,7 @@ package com.methoda.tranquillo.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 private val SeaColorScheme = darkColorScheme(
     primary = Sky,
@@ -23,10 +24,13 @@ private val SeaColorScheme = darkColorScheme(
 fun PerfectlyTranquilloTheme(
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = SeaColorScheme,
-        typography = PerfectlyTranquilloTypography,
-        shapes = PerfectlyTranquilloShapes,
-        content = content
-    )
+    // LocalPalette defaults to Deep Tide; palette switcher arrives in #7.
+    CompositionLocalProvider(LocalPalette provides Palettes.DeepTide) {
+        MaterialTheme(
+            colorScheme = SeaColorScheme,
+            typography = PerfectlyTranquilloTypography,
+            shapes = PerfectlyTranquilloShapes,
+            content = content
+        )
+    }
 }
