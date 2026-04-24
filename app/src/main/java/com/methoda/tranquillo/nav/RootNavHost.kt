@@ -19,7 +19,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.screens.PlaceholderDestination
+import com.methoda.tranquillo.screens.actions.BreakScreen
+import com.methoda.tranquillo.screens.actions.BreathScreen
+import com.methoda.tranquillo.screens.actions.EveningScreen
+import com.methoda.tranquillo.screens.actions.FocusScreen
+import com.methoda.tranquillo.screens.actions.MorningScreen
 import com.methoda.tranquillo.screens.habits.HabitsScreen
 import com.methoda.tranquillo.screens.home.HomeScreen
 import com.methoda.tranquillo.screens.mandala.MandalaScreen
@@ -99,40 +103,35 @@ fun RootNavHost(
                         subprojectNumber = 7
                     )
                 }
-                // Quick-action placeholders
+                // Quick-action real screens (#4)
                 composable(Route.Morning.path) {
-                    PlaceholderDestination(
-                        eyebrow = "your morning",
-                        title = "morning reflection",
-                        subprojectNumber = 4
+                    MorningScreen(
+                        viewModel = viewModel,
+                        onClose = { navController.popBackStack() }
                     )
                 }
                 composable(Route.Evening.path) {
-                    PlaceholderDestination(
-                        eyebrow = "your evening",
-                        title = "evening reflection",
-                        subprojectNumber = 4
+                    EveningScreen(
+                        viewModel = viewModel,
+                        onClose = { navController.popBackStack() }
                     )
                 }
                 composable(Route.Breath.path) {
-                    PlaceholderDestination(
-                        eyebrow = "a few slow breaths",
-                        title = "box breathing",
-                        subprojectNumber = 4
+                    BreathScreen(
+                        viewModel = viewModel,
+                        onClose = { navController.popBackStack() }
                     )
                 }
                 composable(Route.Focus.path) {
-                    PlaceholderDestination(
-                        eyebrow = "twenty-five quiet minutes",
-                        title = "focus",
-                        subprojectNumber = 4
+                    FocusScreen(
+                        viewModel = viewModel,
+                        onClose = { navController.popBackStack() }
                     )
                 }
                 composable(Route.Break.path) {
-                    PlaceholderDestination(
-                        eyebrow = "sixty gentle seconds",
-                        title = "take a break",
-                        subprojectNumber = 4
+                    BreakScreen(
+                        viewModel = viewModel,
+                        onClose = { navController.popBackStack() }
                     )
                 }
             }
