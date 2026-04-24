@@ -18,14 +18,18 @@ import java.util.TimeZone
 
 /**
  * Snapshot of today's state — driven by Room (entries/resources + habit fills)
- * plus in-memory (intent, goodThing, currentPhase) in sub-project #2/#3.
+ * plus in-memory (intent, goodThing, currentPhase, action flags) in sub-project
+ * #2/#3/#4.
  */
 data class TodayState(
     val entries: Map<Pair<ResourceKey, Phase>, EntryPair> = emptyMap(),
     val resources: Map<ResourceKey, AmPmFill> = emptyMap(),
     val intent: String = "",
     val goodThing: String = "",
-    val currentPhase: Phase = Phase.Am
+    val currentPhase: Phase = Phase.Am,
+    val morningMood: String = "",
+    val morningDone: Boolean = false,
+    val eveningDone: Boolean = false
 )
 
 class AppViewModel(application: Application) : AndroidViewModel(application) {
@@ -42,6 +46,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val intent = MutableStateFlow("")
     private val goodThing = MutableStateFlow("")
     private val phaseOverride = MutableStateFlow<Phase?>(null)
+    private val morningMood = MutableStateFlow("")
+    private val morningDone = MutableStateFlow(false)
+    private val eveningDone = MutableStateFlow(false)
+
+    /** Stones collected this session — #5 persists to a Stones table. */
+    private val _stones = MutableStateFlow<List<StoneKind>>(emptyList())
+    val stones: StateFlow<List<StoneKind>> = _stones
+
+    /** Additive per-resource fill bumps awarded by action screens (#4). */
+    private val actionFills = MutableStateFlow<Map<Pair<ResourceKey, Phase>, Float>>(emptyMap())
 
     val userName: StateFlow<String> = app.prefs.userName.stateIn(
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_USER_NAME
@@ -51,16 +65,22 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Today's mandala resources — entry-derived fills *plus* habit-fill bumps
-     * (+0.15 per completed mapped habit), applied to the PM half and capped at
-     * 1.0. Per design README § "Resource↔habit/action mapping".
+     * (+0.15 per completed mapped habit), *plus* action-flow bumps (#4), all
+     * capped at 1.0.
      */
     val today: StateFlow<TodayState> = combine(
-        repo.entryMapForDate(todayDate),
-        repo.fillsForDate(todayDate),
-        habits.fillTotalsForDate(todayDate),
-        intent,
-        goodThing,
-        phaseOverride
+        listOf(
+            repo.entryMapForDate(todayDate),
+            repo.fillsForDate(todayDate),
+            habits.fillTotalsForDate(todayDate),
+            intent,
+            goodThing,
+            phaseOverride,
+            actionFills,
+            morningMood,
+            morningDone,
+            eveningDone
+        )
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val entries = values[0] as Map<Pair<ResourceKey, Phase>, EntryPair>
@@ -71,15 +91,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val intentText = values[3] as String
         val goodThingText = values[4] as String
         val override = values[5] as Phase?
+        @Suppress("UNCHECKED_CAST")
+        val actionBumps = values[6] as Map<Pair<ResourceKey, Phase>, Float>
+        val moodText = values[7] as String
+        val mDone = values[8] as Boolean
+        val eDone = values[9] as Boolean
 
-        val merged = mergeResources(baseResources, habitBumps)
+        val merged = mergeResources(baseResources, habitBumps, actionBumps)
 
         TodayState(
             entries = entries,
             resources = merged,
             intent = intentText,
             goodThing = goodThingText,
-            currentPhase = override ?: autoPhase()
+            currentPhase = override ?: autoPhase(),
+            morningMood = moodText,
+            morningDone = mDone,
+            eveningDone = eDone
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, TodayState())
 
@@ -104,6 +132,30 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun setIntent(text: String) { intent.value = text }
     fun setGoodThing(text: String) { goodThing.value = text }
     fun setPhase(p: Phase) { phaseOverride.value = p }
+
+    // ---- action flow state (#4) -----------------------------------------
+
+    fun setMorningMood(mood: String) { morningMood.value = mood }
+    fun setMorningDone(done: Boolean) { morningDone.value = done }
+    fun setEveningDone(done: Boolean) { eveningDone.value = done }
+
+    /** Append a stone to the in-session pouch (persistence in #5). */
+    fun addStone(kind: StoneKind) {
+        viewModelScope.launch { _stones.value = _stones.value + kind }
+    }
+
+    /**
+     * Add [delta] to the action-fill layer for ([key], [phase]). Caller does
+     * not need to clamp — merging + display both cap at 1.0.
+     */
+    fun addResourceFill(key: ResourceKey, phase: Phase, delta: Float) {
+        viewModelScope.launch {
+            val cur = actionFills.value
+            val k = key to phase
+            val next = ((cur[k] ?: 0f) + delta).coerceIn(0f, 1f)
+            actionFills.value = cur.toMutableMap().also { it[k] = next }
+        }
+    }
 
     // ---- habit actions ---------------------------------------------------
 
@@ -181,14 +233,23 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         fun mergeResources(
             base: Map<ResourceKey, AmPmFill>,
-            habitBumps: Map<ResourceKey, Float>
+            habitBumps: Map<ResourceKey, Float>,
+            actionBumps: Map<Pair<ResourceKey, Phase>, Float> = emptyMap()
         ): Map<ResourceKey, AmPmFill> {
-            if (habitBumps.isEmpty()) return base
+            if (habitBumps.isEmpty() && actionBumps.isEmpty()) return base
             val out = base.toMutableMap()
             for ((key, bump) in habitBumps) {
                 val current = out[key] ?: AmPmFill()
                 val newPm = (current.pm + bump).coerceIn(0f, 1f)
                 out[key] = current.copy(pm = newPm)
+            }
+            for ((keyPhase, bump) in actionBumps) {
+                val (key, phase) = keyPhase
+                val current = out[key] ?: AmPmFill()
+                out[key] = when (phase) {
+                    Phase.Am -> current.copy(am = (current.am + bump).coerceIn(0f, 1f))
+                    Phase.Pm -> current.copy(pm = (current.pm + bump).coerceIn(0f, 1f))
+                }
             }
             return out
         }

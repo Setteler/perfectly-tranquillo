@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.min
 
-enum class StoneKind { Moon, Jade, Shell, Coral, Sand }
+enum class StoneKind { Moon, Jade, Shell, Coral, Sand, Deep }
 
 private data class StonePalette(val a: Color, val b: Color, val c: Color)
 
@@ -32,6 +32,7 @@ private fun paletteFor(kind: StoneKind): StonePalette = when (kind) {
     StoneKind.Shell -> StonePalette(Color(0xFFF2E6D5), Color(0xFFD2BFA7), Color(0xFF8C7A65))
     StoneKind.Coral -> StonePalette(Color(0xFFF4C9B5), Color(0xFFD89778), Color(0xFF9D5F47))
     StoneKind.Sand  -> StonePalette(Color(0xFFEAD9B0), Color(0xFFC9B58D), Color(0xFF7E6E50))
+    StoneKind.Deep  -> StonePalette(Color(0xFFB5C4CC), Color(0xFF7C909A), Color(0xFF43545C))
 }
 
 /**
