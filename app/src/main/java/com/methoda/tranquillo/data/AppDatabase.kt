@@ -11,6 +11,11 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -62,12 +67,20 @@ interface MandalaEntryDao {
 }
 
 @Database(
-    entities = [MandalaEntryEntity::class],
-    version = 2,
+    entities = [
+        MandalaEntryEntity::class,
+        HabitEntity::class,
+        WeeklyHabitEntity::class,
+        HabitFillEntity::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun mandalaEntryDao(): MandalaEntryDao
+    abstract fun habitDao(): HabitDao
+    abstract fun weeklyHabitDao(): WeeklyHabitDao
+    abstract fun habitFillDao(): HabitFillDao
 
     companion object {
         private const val DB_NAME = "perfectly_tranquillo.db"
@@ -76,14 +89,37 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun get(context: Context): AppDatabase =
             instance ?: synchronized(this) {
-                instance ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    DB_NAME
-                )
-                    .fallbackToDestructiveMigration()
-                    .build()
-                    .also { instance = it }
+                instance ?: buildDatabase(context).also { instance = it }
             }
+
+        private fun buildDatabase(context: Context): AppDatabase {
+            val appCtx = context.applicationContext
+            lateinit var built: AppDatabase
+            val seedScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+            built = Room.databaseBuilder(
+                appCtx,
+                AppDatabase::class.java,
+                DB_NAME
+            )
+                .fallbackToDestructiveMigration()
+                .addCallback(object : Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        // Seed defaults once on first DB creation.
+                        seedScope.launch {
+                            HabitSeeder.seedAllIfEmpty(built)
+                        }
+                    }
+
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        // Also seed on open — handles destructive migration case
+                        // (fresh schema but onCreate not re-fired for us reliably).
+                        seedScope.launch {
+                            HabitSeeder.seedAllIfEmpty(built)
+                        }
+                    }
+                })
+                .build()
+            return built
+        }
     }
 }
