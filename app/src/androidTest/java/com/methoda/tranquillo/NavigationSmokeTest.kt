@@ -17,14 +17,14 @@ class NavigationSmokeTest {
     fun allFourTabsPresentAndHabitsNavigates() {
         // The bottom nav has 4 tabs — each label should be present once (tab label).
         // Home is a real screen now (greeting + mandala), so it doesn't contain the
-        // literal word "Home"; we only check the tab label via the placeholder click.
+        // literal word "Home"; we only check the tab label via click navigation.
         composeRule.onNodeWithText("Habits").assertIsDisplayed()
         composeRule.onNodeWithText("Garden").assertIsDisplayed()
         // "Mandala" shows up in both the tab strip and Mandala-screen header; take [0].
         composeRule.onAllNodesWithText("Mandala")[0].assertIsDisplayed()
 
-        // Click the Habits tab and confirm the placeholder eyebrow renders.
+        // Click the Habits tab and confirm the real habits header renders.
         composeRule.onAllNodesWithText("Habits")[0].performClick()
-        composeRule.onNodeWithText("SMALL THINGS, OFTEN").assertIsDisplayed()
+        composeRule.onNodeWithText("TODAY'S TENDING").assertIsDisplayed()
     }
 }
