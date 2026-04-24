@@ -114,14 +114,118 @@ function DailyView({ state, setState, toggle }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
         {state.habits.map(h => (
           <HabitRow key={h.id} habit={h} onToggle={() => toggle(h.id, 'daily')} stoneColor="jade"
+            showRemove
+            onRemove={() => setState(s => ({ ...s, habits: s.habits.filter(x => x.id !== h.id) }))}
             onUpdate={(patch) => setState(s => ({
               ...s,
               habits: s.habits.map(x => x.id === h.id ? { ...x, ...patch } : x),
             }))} />
         ))}
+      </div>
+
+      <DailyAdd setState={setState} />
+    </div>
+  );
+}
+
+function DailyAdd({ setState }) {
+  const [label, setLabel] = React.useState('');
+  const [hint, setHint] = React.useState('');
+  const [remindAt, setRemindAt] = React.useState('');
+  const [expanded, setExpanded] = React.useState(false);
+  const add = () => {
+    if (!label.trim()) return;
+    setState(s => ({
+      ...s,
+      habits: [...s.habits, {
+        id: 'd-' + Date.now(),
+        label: label.trim(),
+        hint: hint.trim() || 'every day',
+        done: false, streak: 0,
+        remindAt,
+      }],
+    }));
+    setLabel(''); setHint(''); setRemindAt(''); setExpanded(false);
+  };
+  if (!expanded) {
+    return (
+      <button onClick={() => setExpanded(true)} className="ui"
+        style={{
+          width: '100%',
+          padding: '14px 18px', borderRadius: 18, cursor: 'pointer',
+          background: 'rgba(245,241,232,0.03)',
+          border: '1px dashed rgba(245,241,232,0.2)',
+          color: 'rgba(245,241,232,0.6)',
+          fontSize: 13, fontStyle: 'italic',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+        <span style={{ fontSize: 18, lineHeight: 1 }}>+</span>
+        add a daily habit
+      </button>
+    );
+  }
+  return (
+    <div className="fade-in" style={{
+      padding: 14, borderRadius: 18,
+      background: 'oklch(0.86 0.09 78 / 0.08)',
+      border: '1px solid oklch(0.86 0.09 78 / 0.25)',
+      display: 'flex', flexDirection: 'column', gap: 10,
+    }}>
+      <input value={label} onChange={e => setLabel(e.target.value)}
+        placeholder="habit name — e.g. drink tea before bed"
+        className="serif"
+        style={{
+          padding: '10px 14px', borderRadius: 12,
+          background: 'rgba(245,241,232,0.05)',
+          border: '1px solid rgba(245,241,232,0.14)',
+          color: 'oklch(0.96 0.02 85)', fontSize: 15, outline: 'none',
+          fontStyle: 'italic',
+        }} />
+      <input value={hint} onChange={e => setHint(e.target.value)}
+        placeholder="little note (optional) — e.g. after dinner"
+        className="ui"
+        style={{
+          padding: '9px 14px', borderRadius: 12,
+          background: 'rgba(245,241,232,0.04)',
+          border: '1px solid rgba(245,241,232,0.12)',
+          color: 'rgba(245,241,232,0.85)', fontSize: 12, outline: 'none',
+        }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span className="ui" style={{
+          fontSize: 10, fontWeight: 600, letterSpacing: 1.4, textTransform: 'uppercase',
+          color: 'rgba(245,241,232,0.55)',
+        }}>Remind me at</span>
+        <input type="time" value={remindAt} onChange={e => setRemindAt(e.target.value)}
+          className="mono"
+          style={{
+            padding: '6px 10px', borderRadius: 10,
+            background: 'rgba(245,241,232,0.06)',
+            border: '1px solid rgba(245,241,232,0.14)',
+            color: 'oklch(0.96 0.02 85)', fontSize: 13,
+            colorScheme: 'dark', outline: 'none',
+          }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => { setExpanded(false); setLabel(''); setHint(''); setRemindAt(''); }}
+          className="ui"
+          style={{
+            flex: 1, padding: '10px 14px', borderRadius: 100, cursor: 'pointer',
+            background: 'transparent',
+            border: '1px solid rgba(245,241,232,0.14)',
+            color: 'rgba(245,241,232,0.6)', fontSize: 13,
+          }}>cancel</button>
+        <button onClick={add} disabled={!label.trim()} className="ui"
+          style={{
+            flex: 1, padding: '10px 14px', borderRadius: 100,
+            cursor: label.trim() ? 'pointer' : 'not-allowed',
+            background: label.trim() ? 'oklch(0.86 0.09 78 / 0.3)' : 'rgba(245,241,232,0.04)',
+            border: '1px solid ' + (label.trim() ? 'oklch(0.86 0.09 78 / 0.5)' : 'rgba(245,241,232,0.1)'),
+            color: label.trim() ? 'oklch(0.94 0.06 82)' : 'rgba(245,241,232,0.3)',
+            fontSize: 13, fontWeight: 600,
+          }}>add habit ✿</button>
       </div>
     </div>
   );
@@ -290,8 +394,31 @@ function WeeklyAdd({ selectedDay, setState }) {
 }
 
 function HabitRow({ habit, onToggle, stoneColor = 'jade', showRemove, onRemove, onUpdate }) {
-  const [editing, setEditing] = React.useState(false);
+  const [editingLabel, setEditingLabel] = React.useState(false);
+  const [labelDraft, setLabelDraft] = React.useState(habit.label);
+  const timeInputRef = React.useRef(null);
   const hasRemind = !!habit.remindAt;
+
+  React.useEffect(() => { setLabelDraft(habit.label); }, [habit.label]);
+
+  const commitLabel = () => {
+    const v = labelDraft.trim();
+    if (v && v !== habit.label) onUpdate && onUpdate({ label: v });
+    else setLabelDraft(habit.label);
+    setEditingLabel(false);
+  };
+
+  const openTimePicker = (e) => {
+    e.stopPropagation();
+    const el = timeInputRef.current;
+    if (!el) return;
+    if (typeof el.showPicker === 'function') {
+      try { el.showPicker(); return; } catch (_) { /* fallback */ }
+    }
+    el.focus();
+    el.click();
+  };
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
@@ -301,136 +428,138 @@ function HabitRow({ habit, onToggle, stoneColor = 'jade', showRemove, onRemove, 
       transition: 'all 0.25s',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <button onClick={onToggle} className="ui"
-        style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 14,
-          background: 'transparent', border: 'none', padding: 0,
-          cursor: 'pointer', textAlign: 'left', color: 'oklch(0.92 0.03 205)',
-        }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          background: habit.done
-            ? (stoneColor === 'coral'
-                ? 'radial-gradient(circle at 30% 28%, oklch(0.85 0.1 35), oklch(0.62 0.12 30))'
-                : 'radial-gradient(circle at 30% 28%, oklch(0.88 0.06 215), oklch(0.55 0.08 225))')
-            : 'rgba(240,248,255,0.04)',
-          border: habit.done ? 'none' : '1px solid rgba(240,248,255,0.25)',
-          flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: habit.done ? 'inset -2px -2px 3px rgba(0,0,0,0.3), inset 2px 2px 2px rgba(255,255,255,0.3)' : 'none',
-        }}>
+        {/* circle toggle */}
+        <button onClick={onToggle} className="ui"
+          style={{
+            width: 28, height: 28, borderRadius: '50%', flexShrink: 0, border: 'none',
+            padding: 0, cursor: 'pointer',
+            background: habit.done
+              ? (stoneColor === 'coral'
+                  ? 'radial-gradient(circle at 30% 28%, oklch(0.85 0.1 35), oklch(0.62 0.12 30))'
+                  : 'radial-gradient(circle at 30% 28%, oklch(0.88 0.06 215), oklch(0.55 0.08 225))')
+              : 'rgba(240,248,255,0.04)',
+            boxShadow: habit.done ? 'inset -2px -2px 3px rgba(0,0,0,0.3), inset 2px 2px 2px rgba(255,255,255,0.3)' : 'none',
+            outline: habit.done ? 'none' : '1px solid rgba(240,248,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
           {habit.done && (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="oklch(0.2 0.03 250)" strokeWidth="2.5" strokeLinecap="round">
               <path d="M5 12l5 5 9-11" />
             </svg>
           )}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="serif" style={{
-            fontSize: 17, color: 'oklch(0.96 0.03 200)',
-            textDecoration: habit.done ? 'line-through' : 'none',
-            textDecorationColor: 'rgba(240,248,255,0.3)',
-          }}>
-            {habit.label}
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(240,248,255,0.5)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>{habit.hint}</span>
-            {hasRemind && (
-              <>
-                <span style={{ opacity: 0.5 }}>·</span>
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'oklch(0.88 0.07 85)' }}>
-                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M18 16V11a6 6 0 10-12 0v5l-2 2h16z" />
-                    <path d="M10 20a2 2 0 004 0" />
-                  </svg>
-                  {habit.remindAt}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-      </button>
-      {habit.streak > 0 && !editing && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 4,
-          padding: '4px 10px', borderRadius: 100,
-          background: 'rgba(240,248,255,0.04)',
-        }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'oklch(0.88 0.07 85)' }} />
-          <span className="mono" style={{ fontSize: 10, color: 'oklch(0.9 0.07 85)' }}>
-            {habit.streak}d
-          </span>
-        </div>
-      )}
-      <button onClick={() => setEditing(e => !e)} className="ui"
-        style={{
-          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-          background: editing || hasRemind ? 'oklch(0.88 0.07 85 / 0.2)' : 'rgba(240,248,255,0.06)',
-          border: '1px solid ' + (editing || hasRemind ? 'oklch(0.88 0.07 85 / 0.4)' : 'rgba(240,248,255,0.12)'),
-          color: editing || hasRemind ? 'oklch(0.92 0.07 85)' : 'rgba(240,248,255,0.5)',
-          cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-          <path d="M18 16V11a6 6 0 10-12 0v5l-2 2h16z" />
-          <path d="M10 20a2 2 0 004 0" />
-        </svg>
-      </button>
-      {showRemove && (
-        <button onClick={onRemove} className="ui"
-          style={{
-            width: 24, height: 24, borderRadius: '50%',
-            background: 'rgba(240,248,255,0.06)',
-            border: '1px solid rgba(240,248,255,0.15)',
-            color: 'rgba(240,248,255,0.6)', fontSize: 12,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>×</button>
-      )}
-      </div>
+        </button>
 
-      {editing && (
-        <div className="fade-in" style={{
-          marginTop: 10, paddingTop: 10,
-          borderTop: '1px solid rgba(240,248,255,0.08)',
-          display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-        }}>
-          <span className="ui" style={{
-            fontSize: 10, fontWeight: 600, letterSpacing: 1.2, textTransform: 'uppercase',
-            color: 'rgba(240,248,255,0.55)',
-          }}>Remind me at</span>
-          <input type="time" value={habit.remindAt || ''}
-            onChange={e => onUpdate && onUpdate({ remindAt: e.target.value })}
-            className="mono"
-            style={{
-              padding: '6px 10px', borderRadius: 10,
-              background: 'rgba(240,248,255,0.06)',
-              border: '1px solid rgba(240,248,255,0.15)',
-              color: 'oklch(0.96 0.03 200)', fontSize: 13,
-              colorScheme: 'dark', outline: 'none',
-            }} />
-          {hasRemind && (
-            <button onClick={() => onUpdate && onUpdate({ remindAt: '' })}
-              className="ui"
+        {/* label + hint + time (tap to edit) */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {editingLabel ? (
+            <input
+              autoFocus
+              value={labelDraft}
+              onChange={e => setLabelDraft(e.target.value)}
+              onBlur={commitLabel}
+              onKeyDown={e => {
+                if (e.key === 'Enter') { e.preventDefault(); commitLabel(); }
+                if (e.key === 'Escape') { setLabelDraft(habit.label); setEditingLabel(false); }
+              }}
+              className="serif"
+              onClick={e => e.stopPropagation()}
               style={{
-                padding: '6px 12px', borderRadius: 100, cursor: 'pointer',
-                background: 'transparent',
-                border: '1px solid rgba(240,248,255,0.15)',
-                color: 'rgba(240,248,255,0.6)', fontSize: 11,
+                width: '100%', boxSizing: 'border-box',
+                padding: '2px 6px', margin: '-3px -6px',
+                background: 'rgba(245,241,232,0.08)',
+                border: '1px solid oklch(0.78 0.08 215 / 0.5)',
+                borderRadius: 6,
+                color: 'oklch(0.96 0.03 200)',
+                fontSize: 17, outline: 'none',
+              }}
+            />
+          ) : (
+            <button onClick={(e) => { e.stopPropagation(); setEditingLabel(true); }}
+              style={{
+                background: 'transparent', border: 'none', padding: 0, margin: 0, cursor: 'text',
+                textAlign: 'left', color: 'inherit', font: 'inherit', display: 'block', width: '100%',
               }}>
-              clear
+              <div className="serif" style={{
+                fontSize: 17, color: 'oklch(0.96 0.03 200)',
+                textDecoration: habit.done ? 'line-through' : 'none',
+                textDecorationColor: 'rgba(240,248,255,0.3)',
+                lineHeight: 1.15,
+              }}>
+                {habit.label}
+              </div>
             </button>
           )}
-          <span className="ui" style={{
-            fontSize: 10, fontStyle: 'italic',
-            color: 'rgba(240,248,255,0.35)', flexBasis: '100%',
-            marginTop: 2,
-          }}>
-            you'll get a soft reminder: <em>"It's time for {habit.label.toLowerCase()} in the garden"</em>
-          </span>
+          <div style={{ fontSize: 11, color: 'rgba(240,248,255,0.5)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span>{habit.hint}</span>
+            <span style={{ opacity: 0.5 }}>·</span>
+            <button onClick={openTimePicker} className="ui"
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+                padding: '2px 8px', borderRadius: 100, cursor: 'pointer',
+                background: hasRemind ? 'oklch(0.88 0.07 85 / 0.18)' : 'rgba(240,248,255,0.05)',
+                border: '1px solid ' + (hasRemind ? 'oklch(0.88 0.07 85 / 0.35)' : 'rgba(240,248,255,0.1)'),
+                color: hasRemind ? 'oklch(0.92 0.07 85)' : 'rgba(240,248,255,0.55)',
+                fontSize: 11, letterSpacing: 0.2,
+              }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M18 16V11a6 6 0 10-12 0v5l-2 2h16z" />
+                <path d="M10 20a2 2 0 004 0" />
+              </svg>
+              {hasRemind ? habit.remindAt : 'set time'}
+            </button>
+            {hasRemind && (
+              <button onClick={(e) => { e.stopPropagation(); onUpdate && onUpdate({ remindAt: '' }); }}
+                className="ui"
+                style={{
+                  padding: '2px 8px', borderRadius: 100, cursor: 'pointer',
+                  background: 'transparent',
+                  border: '1px solid rgba(240,248,255,0.1)',
+                  color: 'rgba(240,248,255,0.45)', fontSize: 10,
+                }}>
+                clear
+              </button>
+            )}
+            {/* invisible native time input, triggered by the pill */}
+            <input
+              ref={timeInputRef}
+              type="time"
+              value={habit.remindAt || ''}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => { e.stopPropagation(); onUpdate && onUpdate({ remindAt: e.target.value }); }}
+              style={{
+                position: 'absolute', width: 0, height: 0, padding: 0, border: 0,
+                opacity: 0, pointerEvents: 'none',
+              }}
+            />
+          </div>
         </div>
-      )}
+
+        {habit.streak > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+            padding: '4px 10px', borderRadius: 100,
+            background: 'rgba(240,248,255,0.04)',
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'oklch(0.88 0.07 85)' }} />
+            <span className="mono" style={{ fontSize: 10, color: 'oklch(0.9 0.07 85)' }}>
+              {habit.streak}d
+            </span>
+          </div>
+        )}
+
+        {showRemove && (
+          <button onClick={(e) => { e.stopPropagation(); onRemove && onRemove(); }} className="ui"
+            style={{
+              width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+              background: 'rgba(240,248,255,0.06)',
+              border: '1px solid rgba(240,248,255,0.15)',
+              color: 'rgba(240,248,255,0.6)', fontSize: 12,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>×</button>
+        )}
+      </div>
     </div>
   );
 }
 
-Object.assign(window, { HabitsScreen, HabitRow, DailyView, WeeklyView });
+Object.assign(window, { HabitsScreen, HabitRow, DailyView, WeeklyView, DailyAdd });

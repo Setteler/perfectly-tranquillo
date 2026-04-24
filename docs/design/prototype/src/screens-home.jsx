@@ -47,18 +47,18 @@ function HomeScreen({ state, setState, go }) {
         </div>
       )}
 
-      {/* Mandala */}
-      <div style={{ position: 'relative', margin: '12px auto 0', display: 'flex', justifyContent: 'center' }}>
-        <SatirMandala size={300} resources={state.resources} showLabels={true} complexity={state.complexity} />
+      {/* Mandala — simplified, display only */}
+      <div style={{ position: 'relative', margin: '16px auto 0', display: 'flex', justifyContent: 'center' }}>
+        <SatirMandala size={240} resources={state.resources} showLabels={true} />
         <button onClick={() => setShowMandalaInfo(v => !v)}
           className="ui"
           style={{
-            position: 'absolute', top: 6, right: 8,
-            width: 26, height: 26, borderRadius: '50%',
-            background: 'rgba(240,248,255,0.1)',
-            border: '1px solid rgba(240,248,255,0.2)',
-            color: 'oklch(0.92 0.04 205)',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            position: 'absolute', top: 6, right: 4,
+            width: 24, height: 24, borderRadius: '50%',
+            background: 'rgba(245,241,232,0.08)',
+            border: '1px solid rgba(245,241,232,0.18)',
+            color: 'rgba(245,241,232,0.8)',
+            fontSize: 12, fontWeight: 600, cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>?</button>
       </div>
@@ -77,28 +77,24 @@ function HomeScreen({ state, setState, go }) {
           <div className="serif" style={{ fontSize: 16, lineHeight: 1.45, color: 'oklch(0.96 0.03 200)', marginBottom: 10 }}>
             Eight petals — the parts of you that need tending.
           </div>
-          <div className="ui" style={{ fontSize: 12.5, lineHeight: 1.55, color: 'rgba(240,248,255,0.75)' }}>
+          <div className="ui" style={{ fontSize: 12.5, lineHeight: 1.55, color: 'rgba(245,241,232,0.75)' }}>
             Based on Virginia Satir's self-mandala. Each petal is a resource:
-            <b style={{ color: 'oklch(0.95 0.04 200)' }}> Body, Mind, Heart, Senses, Connection, Nourish, Place, Spirit.</b>
-            <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'oklch(0.75 0.08 215)', flexShrink: 0 }} />
-              <span><b>Inner ring</b> fills in the morning as you check in.</span>
-            </div>
-            <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'oklch(0.82 0.09 75)', flexShrink: 0 }} />
-              <span><b>Outer ring</b> fills through the day — every habit, break, focus and gratitude feeds a petal.</span>
-            </div>
-            <p style={{ margin: '12px 0 0', fontStyle: 'italic', color: 'rgba(240,248,255,0.55)' }}>
+            <b style={{ color: 'oklch(0.95 0.04 85)' }}> Body, Mind, Heart, Senses, Connection, Nourish, Place, Spirit.</b>
+            <p style={{ margin: '10px 0 0' }}>
+              Open the Mandala tab to jot down — in the morning or evening — what's feeding each part of you, or what's asking for care.
+            </p>
+            <p style={{ margin: '10px 0 0', fontStyle: 'italic', color: 'rgba(245,241,232,0.55)' }}>
               A full mandala isn't the goal — noticing which petals are thin is.
             </p>
           </div>
         </div>
       ) : (
         <div className="ui" style={{
-          textAlign: 'center', fontSize: 11, color: 'rgba(240,248,255,0.55)',
+          textAlign: 'center', fontSize: 11, color: 'rgba(245,241,232,0.5)',
           letterSpacing: 0.6, marginTop: 4, marginBottom: 18,
+          fontStyle: 'italic',
         }}>
-          inner ring · morning   ·   outer ring · evening
+          tend the petals in the Mandala tab
         </div>
       )}
 
@@ -114,15 +110,29 @@ function HomeScreen({ state, setState, go }) {
           title={`Habits`} subtitle={`${habitsDone} of ${habitsTotal} today`} accent="oklch(0.82 0.07 175)" />
       </div>
 
-      {/* Today's good thing */}
-      {state.goodThing && (
+      {/* Today's good thing — empty state invites filling it in via morning reflection */}
+      {state.goodThing ? (
         <Card style={{ marginTop: 10 }}>
           <div className="ui" style={{
             fontSize: 10, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
             color: 'oklch(0.78 0.08 215)', marginBottom: 6,
           }}>Looking forward to</div>
-          <div className="serif" style={{ fontSize: 20, lineHeight: 1.3, color: 'oklch(0.96 0.015 220)' }}>
+          <div className="serif" style={{ fontSize: 20, lineHeight: 1.3, color: 'oklch(0.96 0.02 85)' }}>
             "{state.goodThing}"
+          </div>
+        </Card>
+      ) : (
+        <Card tone="ghost" style={{ marginTop: 10 }} onClick={() => go('morning')}>
+          <div className="ui" style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
+            color: 'rgba(245,241,232,0.45)', marginBottom: 6,
+          }}>Looking forward to</div>
+          <div className="serif" style={{
+            fontSize: 17, lineHeight: 1.3, color: 'rgba(245,241,232,0.55)',
+            fontStyle: 'italic',
+          }}>
+            nothing written yet today —
+            <span style={{ color: 'oklch(0.86 0.09 78)' }}> tap to add one good thing ahead →</span>
           </div>
         </Card>
       )}

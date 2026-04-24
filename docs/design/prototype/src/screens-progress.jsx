@@ -1,100 +1,62 @@
-// Progress / Garden — week grid, stones, streaks
+// Progress / Garden — jar of seashells + resource averages
 function ProgressScreen({ state, setState, go }) {
-  // build a fake 7-day view
-  const days = [
-    { d: 'M', v: 0.55, done: true },
-    { d: 'T', v: 0.7,  done: true },
-    { d: 'W', v: 0.4,  done: true },
-    { d: 'T', v: 0.85, done: true },
-    { d: 'F', v: 0.6,  done: true },
-    { d: 'S', v: 0.3,  done: true },
-    { d: 'S', v: (() => {
-      const v = Object.values(state.resources);
-      return v.reduce((a,r) => a + r.am + r.pm, 0) / (v.length * 2);
-    })(), done: false },
-  ];
+  // Map stone kinds → seashell colors (each "collected ritual" = a shell)
+  const KIND_TO_COLOR = {
+    moon: 'pearl',   // mornings
+    sand: 'butter',  // evenings
+    jade: 'moss',    // habit completions
+    coral: 'coral',  // breaks
+    deep: 'sky',     // focus
+  };
+  const KIND_META = {
+    moon:  { color: 'pearl',  label: 'mornings' },
+    sand:  { color: 'butter', label: 'evenings' },
+    jade:  { color: 'moss',   label: 'habits'   },
+    coral: { color: 'coral',  label: 'breaks'   },
+    deep:  { color: 'sky',    label: 'focus'    },
+  };
 
-  const stoneCounts = state.stones.reduce((acc, s) => {
-    acc[s.kind] = (acc[s.kind] || 0) + 1;
+  // Build the shell list from collected stones + seed with enough demo shells
+  // so the jar looks inhabited on first open.
+  const baseShells = state.stones.map(s => ({ color: KIND_TO_COLOR[s.kind] || 'pearl' }));
+  const seedDemo = [
+    'pearl','butter','moss','pearl','coral','sky','pearl','moss',
+    'butter','pearl','coral','sky','pearl','moss','butter','pearl',
+    'coral','pearl','moss','butter','pearl','sky','coral','pearl',
+    'moss','butter','pearl','coral','sky','pearl','butter','moss',
+  ].map(color => ({ color }));
+  const shells = [...seedDemo, ...baseShells];
+
+  // Counts for the legend (combine demo + real)
+  const counts = shells.reduce((acc, s) => {
+    acc[s.color] = (acc[s.color] || 0) + 1;
     return acc;
-  }, { moon: 8, sand: 3, coral: 2, jade: 5, deep: 1 });
+  }, {});
 
   return (
     <div className="fade-in" style={{ padding: '16px 20px 120px' }}>
       <ScreenHeader eyebrow="12 days tending" title="Your quiet garden" />
 
-      {/* Week strip of mini mandalas */}
-      <div style={{
-        padding: 18, borderRadius: 22,
-        background: 'rgba(240,248,255,0.04)',
-        border: '1px solid rgba(240,248,255,0.1)',
-        marginBottom: 14,
-      }}>
+      {/* Jar of seashells */}
+      <Card style={{ marginBottom: 14, paddingBottom: 18 }}>
         <div className="ui" style={{
           fontSize: 10, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
-          color: 'rgba(240,248,255,0.45)', marginBottom: 14,
-        }}>This week</div>
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'space-between' }}>
-          {days.map((day, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flex: 1 }}>
-              <div style={{ opacity: day.done ? 1 : 0.4 }}>
-                <MiniMandala size={36} fill={day.v} />
-              </div>
-              <div className="mono" style={{
-                fontSize: 10, letterSpacing: 0.4,
-                color: i === 6 ? 'oklch(0.86 0.05 75)' : 'rgba(240,248,255,0.5)',
-                fontWeight: i === 6 ? 600 : 400,
-              }}>
-                {day.d}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Stones collected */}
-      <Card style={{ marginBottom: 14 }}>
-        <div className="ui" style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
-          color: 'rgba(240,248,255,0.45)', marginBottom: 14,
-        }}>Stones collected</div>
-
-        {/* Scatter of stones */}
-        <div style={{
-          position: 'relative', height: 110,
-          background: 'radial-gradient(ellipse at 50% 80%, oklch(0.3 0.06 230 / 0.4), transparent 70%)',
-          borderRadius: 16, overflow: 'hidden',
+          color: 'rgba(240,248,255,0.45)', marginBottom: 6,
+        }}>Shells collected</div>
+        <div className="serif" style={{
+          fontSize: 15, color: 'rgba(240,248,255,0.6)', marginBottom: 14, fontStyle: 'italic',
         }}>
-          {[
-            { x: 14, y: 70, c: 'moon', s: 22 },
-            { x: 40, y: 84, c: 'sand', s: 18 },
-            { x: 68, y: 76, c: 'jade', s: 20 },
-            { x: 96, y: 88, c: 'moon', s: 16 },
-            { x: 122, y: 74, c: 'coral', s: 24 },
-            { x: 152, y: 84, c: 'deep', s: 18 },
-            { x: 180, y: 78, c: 'moon', s: 20 },
-            { x: 208, y: 86, c: 'jade', s: 18 },
-            { x: 234, y: 74, c: 'sand', s: 22 },
-            { x: 262, y: 82, c: 'moon', s: 16 },
-            { x: 290, y: 78, c: 'coral', s: 20 },
-            { x: 22, y: 44, c: 'jade', s: 14 },
-            { x: 62, y: 36, c: 'moon', s: 12 },
-            { x: 148, y: 30, c: 'deep', s: 12 },
-            { x: 212, y: 40, c: 'sand', s: 14 },
-            { x: 272, y: 44, c: 'moon', s: 12 },
-          ].map((s, i) => (
-            <div key={i} style={{ position: 'absolute', left: s.x, top: s.y }}>
-              <Stone color={s.c} size={s.s} />
-            </div>
-          ))}
+          one shell for each ritual you kept.
         </div>
 
-        <div style={{ display: 'flex', gap: 14, marginTop: 16, flexWrap: 'wrap' }}>
-          <StoneLegend color="moon"  label="mornings"   count={stoneCounts.moon} />
-          <StoneLegend color="jade"  label="habits"     count={stoneCounts.jade} />
-          <StoneLegend color="sand"  label="evenings"   count={stoneCounts.sand} />
-          <StoneLegend color="coral" label="breaks"     count={stoneCounts.coral} />
-          <StoneLegend color="deep"  label="focus"      count={stoneCounts.deep} />
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <Jar shells={shells} width={300} height={320} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', marginTop: 8 }}>
+          {Object.entries(KIND_META).map(([kind, m]) => (
+            <ShellLegend key={kind} color={m.color} label={m.label} count={counts[m.color] || 0} />
+          ))}
         </div>
       </Card>
 
@@ -105,7 +67,7 @@ function ProgressScreen({ state, setState, go }) {
           color: 'rgba(240,248,255,0.45)', marginBottom: 14,
         }}>Resources · 7 day average</div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {SATIR_RESOURCES.map((r, i) => {
             const avg = 0.3 + (i * 0.08) % 0.55;
             return (
@@ -141,14 +103,14 @@ function ProgressScreen({ state, setState, go }) {
   );
 }
 
-function StoneLegend({ color, label, count }) {
+function ShellLegend({ color, label, count }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      <Stone color={color} size={14} />
+      <Seashell color={color} size={16} seed={color.charCodeAt(0)} rotate={0} />
       <span className="ui" style={{ fontSize: 11, color: 'rgba(240,248,255,0.7)' }}>{label}</span>
       <span className="mono" style={{ fontSize: 10, color: 'rgba(240,248,255,0.4)' }}>{count}</span>
     </div>
   );
 }
 
-Object.assign(window, { ProgressScreen, StoneLegend });
+Object.assign(window, { ProgressScreen, ShellLegend });

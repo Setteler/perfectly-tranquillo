@@ -1,6 +1,14 @@
 // App — root, state, routing, tweaks, music
 const { useState, useEffect, useRef } = React;
 
+// helpers
+function isoDateOffset(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
 const DEFAULT_HABITS = [
   { id: 'no-phone',  label: "Don't open phone first thing", hint: '15 minutes past waking', done: false, streak: 4,  remindAt: '07:00' },
   { id: 'water',     label: 'Drink water',                   hint: 'First glass by 10am',   done: true,  streak: 7,  remindAt: '09:30' },
@@ -12,21 +20,21 @@ const DEFAULT_HABITS = [
 ];
 
 const DEFAULT_RESOURCES = {
-  physical:      { am: 0.4, pm: 0.2 },
-  intellectual:  { am: 0.5, pm: 0.1 },
-  emotional:     { am: 0.6, pm: 0.15 },
-  sensory:       { am: 0.3, pm: 0.1 },
-  interactional: { am: 0.35, pm: 0.05 },
-  nutritional:   { am: 0.55, pm: 0.25 },
-  contextual:    { am: 0.45, pm: 0.1 },
-  spiritual:     { am: 0.65, pm: 0.2 },
+  physical:      { am: 0, pm: 0 },
+  intellectual:  { am: 0, pm: 0 },
+  emotional:     { am: 0, pm: 0 },
+  sensory:       { am: 0, pm: 0 },
+  interactional: { am: 0, pm: 0 },
+  nutritional:   { am: 0, pm: 0 },
+  contextual:    { am: 0, pm: 0 },
+  spiritual:     { am: 0, pm: 0 },
 };
 
 const INITIAL_STATE = {
   name: 'Sofía',
-  morningDone: true,
+  morningDone: false,
   eveningDone: false,
-  goodThing: "the first sip of coffee on the balcony",
+  goodThing: '',
   intent: 'Gentle focus',
   morningMood: 'bright',
   habits: DEFAULT_HABITS,
@@ -40,11 +48,36 @@ const INITIAL_STATE = {
     { id: 'date-night', label: 'Date night',         hint: 'Friday evenings',   day: 5, done: false, streak: 2, remindAt: '19:30' },
   ],
   resources: DEFAULT_RESOURCES,
-  mandalaEntries: {
-    emotional:  { am: { resource: 'woke up calm for the first time this week', challenge: '' } },
-    nutritional:{ am: { resource: 'coffee and a real breakfast, slowly', challenge: '' } },
-    spiritual:  { am: { resource: 'looking forward to the sun on the balcony', challenge: '' } },
-  },
+  mandalaEntries: {},
+  mandalaHistory: [
+    // demo entries over the last ~2 weeks so the archive isn't empty on first open
+    { date: isoDateOffset(-14), key: 'contextual',    phase: 'am', kind: 'resource',  text: 'desk clear, plant watered, room feels open' },
+    { date: isoDateOffset(-12), key: 'intellectual',  phase: 'pm', kind: 'resource',  text: 'finally understood the thing Jun was explaining last week' },
+    { date: isoDateOffset(-10), key: 'sensory',       phase: 'pm', kind: 'resource',  text: 'walked home through the market, everything smelled like basil' },
+    { date: isoDateOffset(-8),  key: 'nutritional',   phase: 'am', kind: 'resource',  text: 'made proper coffee, didn\'t rush' },
+    { date: isoDateOffset(-6),  key: 'emotional',     phase: 'am', kind: 'resource',  text: 'woke up calm for the first time this week' },
+    { date: isoDateOffset(-6),  key: 'nutritional',   phase: 'am', kind: 'resource',  text: 'slow breakfast, no rushing' },
+    { date: isoDateOffset(-6),  key: 'interactional', phase: 'am', kind: 'challenge', text: 'went the whole morning without speaking to anyone' },
+    { date: isoDateOffset(-6),  key: 'spiritual',     phase: 'pm', kind: 'resource',  text: 'sat on the fire escape, watched the sky go pink' },
+    { date: isoDateOffset(-5),  key: 'physical',      phase: 'pm', kind: 'challenge', text: 'tight shoulders from sitting all day' },
+    { date: isoDateOffset(-5),  key: 'physical',      phase: 'pm', kind: 'resource',  text: 'a real walk, forty minutes, got lost on purpose' },
+    { date: isoDateOffset(-5),  key: 'spiritual',     phase: 'am', kind: 'resource',  text: 'looking forward to the sun on the balcony' },
+    { date: isoDateOffset(-5),  key: 'emotional',     phase: 'am', kind: 'resource',  text: 'woke up soft, not bracing for the day' },
+    { date: isoDateOffset(-4),  key: 'interactional', phase: 'pm', kind: 'resource',  text: 'long call with mom, felt seen' },
+    { date: isoDateOffset(-4),  key: 'contextual',    phase: 'pm', kind: 'challenge', text: 'flat felt cluttered, couldn\'t settle into anything' },
+    { date: isoDateOffset(-3),  key: 'intellectual',  phase: 'am', kind: 'resource',  text: 'read ten pages of the Berger book, slow morning' },
+    { date: isoDateOffset(-3),  key: 'interactional', phase: 'pm', kind: 'resource',  text: 'long call with mum, she sounded steady' },
+    { date: isoDateOffset(-3),  key: 'intellectual',  phase: 'pm', kind: 'resource',  text: 'finished a chapter of the novel' },
+    { date: isoDateOffset(-3),  key: 'emotional',     phase: 'pm', kind: 'challenge', text: 'feeling thin, easily snapped' },
+    { date: isoDateOffset(-2),  key: 'sensory',       phase: 'am', kind: 'resource',  text: 'the light coming through the kitchen window was very soft' },
+    { date: isoDateOffset(-2),  key: 'sensory',       phase: 'am', kind: 'resource',  text: 'cold air from the window, very alive' },
+    { date: isoDateOffset(-2),  key: 'nutritional',   phase: 'pm', kind: 'resource',  text: 'cooked dal, ate slowly without a screen' },
+    { date: isoDateOffset(-2),  key: 'contextual',    phase: 'pm', kind: 'challenge', text: 'kitchen cluttered, couldn\'t think' },
+    { date: isoDateOffset(-1),  key: 'emotional',     phase: 'pm', kind: 'resource',  text: 'laughed hard with L over something stupid at dinner' },
+    { date: isoDateOffset(-1),  key: 'physical',      phase: 'am', kind: 'resource',  text: 'slept eight hours, woke before the alarm' },
+    { date: isoDateOffset(-1),  key: 'nutritional',   phase: 'am', kind: 'resource',  text: 'real coffee, not rushed' },
+    { date: isoDateOffset(-1),  key: 'spiritual',     phase: 'pm', kind: 'challenge', text: 'everything felt a little flat today, going through motions' },
+  ],
   stones: [
     { kind: 'moon', label: 'morning' },
     { kind: 'jade', label: 'water' },
@@ -52,17 +85,93 @@ const INITIAL_STATE = {
     { kind: 'moon', label: 'breath' },
   ],
   sound: true,
-  font: 'fraunces',
+  ambientSound: 'waves',       // waves | birds | bowls | music | none
+  notifMode: 'sound',           // silent | sound | vibrate
+  theme: 'dark',                // dark | light
+  font: 'caveat',
   complexity: 'full',
 };
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "font": "fraunces",
+  "font": "caveat",
   "music": true,
   "musicVolume": 55,
   "warmth": 65,
-  "sound": true
+  "sound": true,
+  "palette": "deeptide"
 }/*EDITMODE-END*/;
+
+// Ocean palette system — four named directions, each setting outer page bg, device inner bg, and whether to overlay a wave texture.
+const PALETTES = {
+  deeptide: {
+    label: 'Deep Tide',
+    hint: 'dark turquoise + warm sand',
+    pageBg: `
+      radial-gradient(ellipse at 85% 95%, oklch(0.82 0.08 75 / 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 10% 10%, oklch(0.55 0.09 195 / 0.55) 0%, transparent 52%),
+      radial-gradient(ellipse at 80% 30%, oklch(0.42 0.08 190 / 0.7) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.32 0.07 195) 0%, oklch(0.22 0.06 200) 50%, oklch(0.16 0.05 205) 100%)
+    `,
+    deviceBg: `
+      radial-gradient(ellipse at 82% 95%, oklch(0.88 0.06 80 / 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 18% 8%,  oklch(0.55 0.09 195 / 0.45) 0%, transparent 50%),
+      radial-gradient(ellipse at 78% 25%, oklch(0.42 0.08 190 / 0.55) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.30 0.07 195) 0%, oklch(0.22 0.06 200) 45%, oklch(0.16 0.05 205) 100%)
+    `,
+    waves: false,
+  },
+  tidepool: {
+    label: 'Tidepool',
+    hint: 'cleaned-up deep blue (less purple)',
+    pageBg: `
+      radial-gradient(ellipse at 85% 95%, oklch(0.82 0.08 75 / 0.14) 0%, transparent 55%),
+      radial-gradient(ellipse at 10% 10%, oklch(0.42 0.11 225 / 0.7) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 30%, oklch(0.34 0.10 230 / 0.75) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.24 0.07 230) 0%, oklch(0.17 0.06 232) 50%, oklch(0.13 0.05 235) 100%)
+    `,
+    deviceBg: `
+      radial-gradient(ellipse at 82% 95%, oklch(0.85 0.07 80 / 0.2) 0%, transparent 55%),
+      radial-gradient(ellipse at 18% 8%,  oklch(0.45 0.10 225 / 0.5) 0%, transparent 50%),
+      radial-gradient(ellipse at 78% 25%, oklch(0.34 0.09 230 / 0.65) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.24 0.07 230) 0%, oklch(0.18 0.06 232) 45%, oklch(0.14 0.05 235) 100%)
+    `,
+    waves: false,
+  },
+  seaglass: {
+    label: 'Sea Glass',
+    hint: 'brighter teal · twilight lagoon',
+    pageBg: `
+      radial-gradient(ellipse at 85% 95%, oklch(0.88 0.07 80 / 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 10% 10%, oklch(0.65 0.10 200 / 0.55) 0%, transparent 52%),
+      radial-gradient(ellipse at 80% 30%, oklch(0.52 0.09 195 / 0.65) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.38 0.08 200) 0%, oklch(0.28 0.07 205) 50%, oklch(0.20 0.06 210) 100%)
+    `,
+    deviceBg: `
+      radial-gradient(ellipse at 82% 95%, oklch(0.9 0.06 80 / 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 18% 8%,  oklch(0.65 0.10 200 / 0.5) 0%, transparent 50%),
+      radial-gradient(ellipse at 78% 25%, oklch(0.50 0.09 195 / 0.55) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.36 0.08 200) 0%, oklch(0.26 0.07 205) 45%, oklch(0.20 0.06 210) 100%)
+    `,
+    waves: false,
+  },
+  kelp: {
+    label: 'Kelp Forest',
+    hint: 'deep teal · with wave texture',
+    pageBg: `
+      radial-gradient(ellipse at 85% 95%, oklch(0.82 0.08 75 / 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 10% 10%, oklch(0.40 0.10 180 / 0.55) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 30%, oklch(0.30 0.09 175 / 0.7) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.22 0.07 180) 0%, oklch(0.16 0.06 182) 50%, oklch(0.11 0.05 185) 100%)
+    `,
+    deviceBg: `
+      radial-gradient(ellipse at 82% 95%, oklch(0.85 0.06 80 / 0.18) 0%, transparent 55%),
+      radial-gradient(ellipse at 18% 8%,  oklch(0.42 0.10 180 / 0.45) 0%, transparent 50%),
+      radial-gradient(ellipse at 78% 25%, oklch(0.30 0.09 178 / 0.6) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.22 0.07 180) 0%, oklch(0.16 0.06 182) 45%, oklch(0.12 0.05 185) 100%)
+    `,
+    waves: true,
+  },
+};
 
 const ambient = makeAmbient();
 
@@ -82,6 +191,48 @@ function App() {
   };
   useEffect(() => { if (!tweaks.music && musicOn) { ambient.stop(); setMusicOn(false); } }, [tweaks.music]);
   useEffect(() => { if (musicOn) ambient.setVolume((tweaks.musicVolume || 50) / 100); }, [tweaks.musicVolume, musicOn]);
+
+  // Midnight refresh — clear today's goodThing + mandala entries, archive to history.
+  // For demo, also expose a manual "new day" action via tweaks.
+  const resetForNewDay = React.useCallback(() => {
+    setState(s => {
+      // flatten today's mandalaEntries into the history log
+      const today = todayISO();
+      const flushed = [];
+      Object.entries(s.mandalaEntries || {}).forEach(([key, phases]) => {
+        Object.entries(phases || {}).forEach(([phase, entry]) => {
+          if (entry?.resource?.trim()) {
+            flushed.push({ date: today, key, phase, kind: 'resource', text: entry.resource.trim() });
+          }
+          if (entry?.challenge?.trim()) {
+            flushed.push({ date: today, key, phase, kind: 'challenge', text: entry.challenge.trim() });
+          }
+        });
+      });
+      return {
+        ...s,
+        goodThing: '',
+        morningDone: false,
+        eveningDone: false,
+        mandalaEntries: {},
+        mandalaHistory: [...(s.mandalaHistory || []), ...flushed],
+        resources: Object.fromEntries(
+          Object.keys(s.resources).map(k => [k, { am: 0, pm: 0 }])
+        ),
+        habits: s.habits.map(h => ({ ...h, done: false })),
+      };
+    });
+  }, []);
+
+  // schedule a midnight timer — recomputes on mount
+  useEffect(() => {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(24, 0, 5, 0); // 5s past midnight
+    const ms = next - now;
+    const t = setTimeout(resetForNewDay, ms);
+    return () => clearTimeout(t);
+  }, [resetForNewDay]);
 
   // fake notification demo — fire one 7 seconds after load for an unticked habit with a reminder
   useEffect(() => {
@@ -124,12 +275,8 @@ function App() {
   const showTabs = ['home', 'habits', 'mandala', 'progress'].includes(route);
   const tabMap = { home: 'home', habits: 'habits', mandala: 'mandala', progress: 'progress' };
 
-  const pageBg = `
-    radial-gradient(ellipse at 85% 95%, oklch(0.82 0.09 80 / ${0.15 + warmth * 0.35}) 0%, transparent 55%),
-    radial-gradient(ellipse at 10% 10%, oklch(0.7 0.12 210 / ${0.9 - warmth * 0.35}) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 30%, oklch(0.58 0.13 215 / ${0.85 - warmth * 0.3}) 0%, transparent 55%),
-    linear-gradient(180deg, oklch(${0.4 + warmth * 0.05} 0.09 ${220 - warmth * 20}) 0%, oklch(0.28 0.07 225) 50%, oklch(0.22 0.06 230) 100%)
-  `;
+  const pal = PALETTES[tweaks.palette] || PALETTES.deeptide;
+  const pageBg = pal.pageBg;
 
   // Nav model reminder for the designer (visible once in light text under the device)
   return (
@@ -159,7 +306,7 @@ function App() {
 
       {/* Phone */}
       <div style={{ position: 'relative' }}>
-        <PTDevice>
+        <PTDevice palette={pal}>
           <MusicButton playing={musicOn} onToggle={toggleMusic} />
           <SettingsGear onClick={() => setRoute('settings')} />
 
@@ -210,9 +357,9 @@ function App() {
       {/* Tweaks panel */}
       <TweaksPanel title="Tweaks">
         <TweakSection label="Feel" />
-        <TweakRadio label="Font" value={tweaks.font}
-          options={['fraunces', 'caveat', 'instrument', 'cormorant']}
-          onChange={v => setTweak('font', v)} />
+        <TweakRadio label="Palette" value={tweaks.palette}
+          options={['deeptide', 'tidepool', 'seaglass', 'kelp']}
+          onChange={v => setTweak('palette', v)} />
         <TweakSlider label="Warmth" value={tweaks.warmth} min={0} max={100} unit="%"
           onChange={v => setTweak('warmth', v)} />
 
@@ -226,6 +373,7 @@ function App() {
 
         <TweakSection label="Demo" />
         <TweakButton label="Trigger reminder" onClick={triggerDemoNotif} />
+        <TweakButton label="Simulate new day" onClick={resetForNewDay} />
       </TweaksPanel>
     </div>
   );

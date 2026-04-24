@@ -1,13 +1,58 @@
 // Mandala screen — dedicated tab for morning + evening resource/challenge entries per petal.
+// Simplified: inline editor (no modal sheet), no "filled count", quieter artwork.
+
+// Archive history comes from state.mandalaHistory — entries are flushed there at midnight
+// (see resetForNewDay in app.jsx). Each entry: { date, key, phase, kind: 'resource'|'challenge', text }.
+// The Mandala petals only reflect TODAY's entries (state.resources), so they reset visually at midnight.
+
+function daysAgo(iso) {
+  const then = new Date(iso);
+  const today = new Date();
+  then.setHours(0,0,0,0); today.setHours(0,0,0,0);
+  return Math.round((today - then) / 86400000);
+}
+
+function formatAgo(days) {
+  if (days === 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return days + ' days ago';
+  if (days < 14) return 'last week';
+  return Math.floor(days / 7) + ' weeks ago';
+}
+
+// per-resource hint of color for the archive; all in the warm/earth family so
+// they harmonize with the mandala palette instead of fighting it.
+const RESOURCE_TINT = {
+  physical:      'oklch(0.78 0.09 38)',
+  intellectual:  'oklch(0.8 0.07 220)',
+  emotional:     'oklch(0.78 0.1 20)',
+  sensory:       'oklch(0.82 0.09 140)',
+  interactional: 'oklch(0.8 0.1 340)',
+  nutritional:   'oklch(0.84 0.09 90)',
+  contextual:    'oklch(0.76 0.05 260)',
+  spiritual:     'oklch(0.85 0.08 75)',
+};
+
+function phaseForNow() {
+  // Morning: 5:00 AM – 1:59 PM. Evening: 2:00 PM – 4:59 AM.
+  const h = new Date().getHours();
+  return (h >= 5 && h < 14) ? 'am' : 'pm';
+}
+
 function MandalaScreen({ state, setState }) {
-  const [phase, setPhase] = React.useState(() => {
-    const h = new Date().getHours();
-    return h < 17 ? 'am' : 'pm';
-  });
+  const [phase, setPhase] = React.useState(phaseForNow);
+  // Re-check the clock whenever the screen re-renders AND on a 1-min interval,
+  // so if the user leaves the screen open across the cutoff it flips automatically.
+  React.useEffect(() => {
+    const tick = () => setPhase(phaseForNow());
+    tick();
+    const id = setInterval(tick, 60 * 1000);
+    return () => clearInterval(id);
+  }, []);
   const [activeKey, setActiveKey] = React.useState(null);
+  const [historyRange, setHistoryRange] = React.useState('week'); // week | month
 
   const entries = state.mandalaEntries || {};
-  const active = activeKey ? SATIR_RESOURCES.find(r => r.key === activeKey) : null;
 
   const saveEntry = (key, phase, kind, text) => {
     setState(s => {
@@ -20,10 +65,9 @@ function MandalaScreen({ state, setState }) {
           [phase]: next,
         },
       };
-      // update petal fill: resource adds, challenge softens
-      const hasRes = !!next.resource.trim();
-      const hasChal = !!next.challenge.trim();
-      const fill = hasRes ? (hasChal ? 0.6 : 0.9) : (hasChal ? 0.3 : 0);
+      // binary: any entry (resource OR challenge) lights this phase
+      const hasAny = !!next.resource.trim() || !!next.challenge.trim();
+      const fill = hasAny ? 1 : 0;
       const resources = {
         ...s.resources,
         [key]: { ...s.resources[key], [phase]: fill },
@@ -32,276 +76,461 @@ function MandalaScreen({ state, setState }) {
     });
   };
 
-  const filledCount = SATIR_RESOURCES.filter(r => {
-    const e = entries[r.key]?.[phase];
-    return e && (e.resource?.trim() || e.challenge?.trim());
-  }).length;
+  const active = activeKey ? SATIR_RESOURCES.find(r => r.key === activeKey) : null;
 
   return (
     <div className="fade-in" style={{ padding: '16px 20px 120px' }}>
-      <ScreenHeader eyebrow="Your inner landscape" title="Mandala" />
+      <ScreenHeader title="Mandala" />
 
-      <div className="ui" style={{
-        fontSize: 13, lineHeight: 1.55, color: 'rgba(240,248,255,0.6)',
-        margin: '4px 0 16px',
-      }}>
-        Eight resources of the self. Each morning and evening, tap a petal and name one good thing it's receiving — and, if you need to, one thing that's asking for care.
-      </div>
-
-      {/* AM/PM toggle */}
+      {/* Phase indicator — automatic, based on time of day */}
       <div style={{
-        display: 'flex', padding: 4, borderRadius: 100,
-        background: 'rgba(240,248,255,0.06)',
-        border: '1px solid rgba(240,248,255,0.1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+        padding: '11px 16px', borderRadius: 100,
+        background: phase === 'am'
+          ? 'oklch(0.82 0.07 210 / 0.12)'
+          : 'oklch(0.86 0.09 78 / 0.12)',
+        border: '1px solid ' + (phase === 'am'
+          ? 'oklch(0.82 0.07 210 / 0.3)'
+          : 'oklch(0.86 0.09 78 / 0.3)'),
         marginBottom: 18,
       }}>
-        {[
-          { k: 'am', l: 'Morning', glyph: '◐' },
-          { k: 'pm', l: 'Evening', glyph: '◑' },
-        ].map(t => (
-          <button key={t.k} onClick={() => setPhase(t.k)} className="ui"
-            style={{
-              flex: 1, padding: '10px 12px', borderRadius: 100, cursor: 'pointer', border: 'none',
-              background: phase === t.k ? 'oklch(0.88 0.07 85 / 0.22)' : 'transparent',
-              color: phase === t.k ? 'oklch(0.95 0.06 85)' : 'rgba(240,248,255,0.6)',
-              fontSize: 13, fontWeight: 600, letterSpacing: 0.3,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            }}>
-            <span style={{ fontSize: 13 }}>{t.glyph}</span>
-            {t.l}
-          </button>
-        ))}
+        <span style={{
+          fontSize: 16,
+          color: phase === 'am' ? 'oklch(0.86 0.08 210)' : 'oklch(0.92 0.08 82)',
+        }}>{phase === 'am' ? '◐' : '◑'}</span>
+        <span className="serif" style={{
+          fontSize: 18,
+          color: phase === 'am' ? 'oklch(0.92 0.05 210)' : 'oklch(0.94 0.06 82)',
+          letterSpacing: 0.1,
+        }}>
+          {phase === 'am' ? 'Morning' : 'Evening'}
+        </span>
+        <span className="ui" style={{
+          fontSize: 10, fontStyle: 'italic',
+          color: 'rgba(245,241,232,0.35)',
+        }}>
+          · {phase === 'am' ? 'until 2:00 pm' : 'from 2:00 pm'}
+        </span>
       </div>
 
-      {/* Mandala — tap petals */}
+      {/* Mandala — display only, no tap */}
       <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        padding: '16px 0 8px', position: 'relative',
+        padding: '8px 0 4px',
       }}>
-        <MandalaTappable
+        <SatirMandala
+          size={260}
           resources={state.resources}
-          entries={entries}
-          phase={phase}
-          activeKey={activeKey}
-          onTap={(k) => setActiveKey(k)}
-          size={300}
+          highlight={activeKey}
+          showLabels={true}
         />
-        <div className="ui" style={{
-          fontSize: 11, color: 'rgba(240,248,255,0.45)',
-          marginTop: 8, letterSpacing: 0.3,
-        }}>
-          tap any petal to tend it · <span className="mono" style={{ color: 'oklch(0.9 0.07 85)' }}>{filledCount}/8</span> filled
-        </div>
       </div>
 
-      {/* Resource list — quick overview */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 18 }}>
+      {/* Resource list — the actual input surface */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 20 }}>
         {SATIR_RESOURCES.map(r => {
           const e = entries[r.key]?.[phase];
           const hasRes = !!e?.resource?.trim();
           const hasChal = !!e?.challenge?.trim();
+          const isOpen = activeKey === r.key;
           return (
-            <button key={r.key} onClick={() => setActiveKey(r.key)} className="ui"
-              style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 14px', borderRadius: 16,
-                background: activeKey === r.key
-                  ? 'oklch(0.78 0.08 215 / 0.14)'
-                  : 'rgba(240,248,255,0.04)',
-                border: '1px solid ' + (activeKey === r.key
-                  ? 'oklch(0.78 0.08 215 / 0.35)'
-                  : 'rgba(240,248,255,0.1)'),
-                cursor: 'pointer', textAlign: 'left',
-              }}>
-              <PetalDot resourceKey={r.key} filled={hasRes || hasChal} phase={phase} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="serif" style={{ fontSize: 16, color: 'oklch(0.96 0.015 220)' }}>
-                  {r.label}
-                </div>
-                <div className="ui" style={{
-                  fontSize: 11, color: 'rgba(240,248,255,0.5)',
-                  marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            <div key={r.key}>
+              <button onClick={() => setActiveKey(isOpen ? null : r.key)} className="ui"
+                style={{
+                  width: '100%',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 14px',
+                  borderRadius: isOpen ? '16px 16px 0 0' : 16,
+                  background: isOpen
+                    ? 'oklch(0.86 0.09 78 / 0.14)'
+                    : 'rgba(245,241,232,0.04)',
+                  border: '1px solid ' + (isOpen
+                    ? 'oklch(0.86 0.09 78 / 0.3)'
+                    : 'rgba(245,241,232,0.08)'),
+                  borderBottom: isOpen ? 'none' : undefined,
+                  cursor: 'pointer', textAlign: 'left',
                 }}>
-                  {hasRes ? `✿ ${e.resource}` : (hasChal ? `◌ ${e.challenge}` : r.hint)}
+                <PetalDot filled={hasRes || hasChal} accent={phase} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="serif" style={{
+                    fontSize: 17,
+                    color: 'oklch(0.96 0.02 85)',
+                    lineHeight: 1.2,
+                  }}>
+                    {r.label}
+                  </div>
+                  <div className="ui" style={{
+                    fontSize: 11, color: 'rgba(245,241,232,0.5)',
+                    marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>
+                    {hasRes ? `✿ ${e.resource}` : (hasChal ? `◌ ${e.challenge}` : r.hint)}
+                  </div>
                 </div>
-              </div>
-              <span style={{ color: 'rgba(240,248,255,0.3)', fontSize: 14 }}>›</span>
-            </button>
+                <span style={{
+                  color: 'rgba(245,241,232,0.3)', fontSize: 14,
+                  transform: isOpen ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.2s',
+                }}>›</span>
+              </button>
+
+              {isOpen && (
+                <div className="fade-in" style={{
+                  padding: '14px 14px 16px',
+                  borderRadius: '0 0 16px 16px',
+                  background: 'oklch(0.86 0.09 78 / 0.08)',
+                  border: '1px solid oklch(0.86 0.09 78 / 0.3)',
+                  borderTop: 'none',
+                }}>
+                  <InlineEditor
+                    resource={r}
+                    phase={phase}
+                    entry={entries[r.key]?.[phase] || { resource: '', challenge: '' }}
+                    onSave={(kind, text) => saveEntry(r.key, phase, kind, text)}
+                    onClose={() => setActiveKey(null)}
+                  />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
 
-      {/* Petal sheet */}
-      {active && (
-        <PetalSheet
-          resource={active}
-          phase={phase}
-          entry={entries[active.key]?.[phase] || { resource: '', challenge: '' }}
-          onClose={() => setActiveKey(null)}
-          onSave={(kind, text) => saveEntry(active.key, phase, kind, text)}
-        />
+      {/* History / archive — reads from state.mandalaHistory */}
+      <MandalaHistory
+        history={state.mandalaHistory || []}
+        resources={SATIR_RESOURCES}
+        range={historyRange}
+        setRange={setHistoryRange}
+      />
+    </div>
+  );
+}
+
+function MandalaHistory({ history, resources, range, setRange }) {
+  const [archiveOpen, setArchiveOpen] = React.useState(false);
+  const [openCategory, setOpenCategory] = React.useState(null); // resource key or null
+
+  const limit = range === 'week' ? 7 : 30;
+  // only entries within range; compute ago on the fly.
+  const inRange = (history || [])
+    .map(e => ({ ...e, ago: daysAgo(e.date) }))
+    .filter(e => e.ago >= 0 && e.ago <= limit)
+    // newest first
+    .sort((a, b) => a.ago - b.ago);
+
+  // group by resource key, then split into resources + challenges
+  const grouped = {};
+  resources.forEach(r => { grouped[r.key] = { resource: [], challenge: [] }; });
+  inRange.forEach(e => {
+    if (grouped[e.key] && grouped[e.key][e.kind]) {
+      grouped[e.key][e.kind].push(e);
+    }
+  });
+
+  return (
+    <div style={{ marginTop: 30 }}>
+      <div style={{
+        height: 1,
+        background: 'linear-gradient(90deg, transparent, rgba(245,241,232,0.14), transparent)',
+        margin: '0 -4px 18px',
+      }}></div>
+
+      {/* Archive header — tap to expand whole section */}
+      <button onClick={() => setArchiveOpen(v => !v)} className="ui"
+        style={{
+          width: '100%', padding: '4px 2px 6px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'transparent', border: 'none', cursor: 'pointer',
+          textAlign: 'left',
+        }}>
+        <div>
+          <div className="ui" style={{
+            fontSize: 10, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase',
+            color: 'rgba(245,241,232,0.4)', marginBottom: 4,
+          }}>Archive</div>
+          <div className="serif" style={{
+            fontSize: 22, color: 'oklch(0.96 0.02 85)',
+            letterSpacing: -0.2,
+          }}>What's been feeding you</div>
+        </div>
+        <span style={{
+          color: 'rgba(245,241,232,0.5)', fontSize: 20,
+          transform: archiveOpen ? 'rotate(90deg)' : 'none',
+          transition: 'transform 0.2s',
+          marginLeft: 8,
+        }}>›</span>
+      </button>
+
+      {archiveOpen && (
+        <div className="fade-in" style={{ marginTop: 14 }}>
+          {/* 7d / 30d toggle */}
+          <div style={{
+            display: 'flex', justifyContent: 'flex-end', marginBottom: 12,
+          }}>
+            <div style={{
+              display: 'flex', padding: 3, borderRadius: 100,
+              background: 'rgba(245,241,232,0.04)',
+              border: '1px solid rgba(245,241,232,0.08)',
+            }}>
+              {[{ k: 'week', l: '7d' }, { k: 'month', l: '30d' }].map(t => (
+                <button key={t.k} onClick={() => setRange(t.k)} className="mono"
+                  style={{
+                    padding: '5px 11px', borderRadius: 100, border: 'none', cursor: 'pointer',
+                    background: range === t.k ? 'rgba(245,241,232,0.12)' : 'transparent',
+                    color: range === t.k ? 'oklch(0.96 0.02 85)' : 'rgba(245,241,232,0.5)',
+                    fontSize: 11, letterSpacing: 0.5,
+                  }}>{t.l}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Category rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {resources.map(r => {
+              const bucket = grouped[r.key] || { resource: [], challenge: [] };
+              const resCount = bucket.resource.length;
+              const chalCount = bucket.challenge.length;
+              const total = resCount + chalCount;
+              const tint = RESOURCE_TINT[r.key];
+              const isOpen = openCategory === r.key;
+              return (
+                <div key={r.key}>
+                  <button onClick={() => setOpenCategory(isOpen ? null : r.key)} className="ui"
+                    style={{
+                      width: '100%',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 14px',
+                      borderRadius: isOpen ? '14px 14px 0 0' : 14,
+                      background: isOpen
+                        ? 'rgba(245,241,232,0.05)'
+                        : 'rgba(245,241,232,0.03)',
+                      border: '1px solid rgba(245,241,232,0.08)',
+                      borderBottom: isOpen ? 'none' : undefined,
+                      cursor: 'pointer', textAlign: 'left',
+                    }}>
+                    <span style={{
+                      width: 9, height: 9, borderRadius: '50%',
+                      background: tint,
+                      opacity: total > 0 ? 0.9 : 0.3,
+                      boxShadow: total > 0 ? `0 0 8px ${tint}55` : 'none',
+                      flexShrink: 0,
+                    }}></span>
+                    <span className="serif" style={{
+                      flex: 1,
+                      fontSize: 20,
+                      color: total > 0 ? 'oklch(0.96 0.02 85)' : 'rgba(245,241,232,0.55)',
+                      letterSpacing: -0.1,
+                    }}>{r.label}</span>
+                    {total > 0 && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}>
+                        {resCount > 0 && (
+                          <span className="ui" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            fontSize: 10,
+                            color: 'oklch(0.88 0.09 78)',
+                          }}>
+                            <span style={{ fontSize: 11 }}>✿</span>
+                            {resCount}
+                          </span>
+                        )}
+                        {chalCount > 0 && (
+                          <span className="ui" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 3,
+                            fontSize: 10,
+                            color: 'oklch(0.72 0.11 30)',
+                          }}>
+                            <span style={{ fontSize: 11 }}>◌</span>
+                            {chalCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {total === 0 && (
+                      <span className="mono" style={{
+                        fontSize: 11, color: 'rgba(245,241,232,0.35)',
+                      }}>—</span>
+                    )}
+                    <span style={{
+                      color: 'rgba(245,241,232,0.3)', fontSize: 13,
+                      transform: isOpen ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.2s',
+                    }}>›</span>
+                  </button>
+
+                  {isOpen && (
+                    <div className="fade-in" style={{
+                      padding: total === 0 ? '14px' : '12px 12px 14px',
+                      borderRadius: '0 0 14px 14px',
+                      background: 'rgba(245,241,232,0.025)',
+                      border: '1px solid rgba(245,241,232,0.08)',
+                      borderTop: 'none',
+                    }}>
+                      {total === 0 ? (
+                        <div className="ui" style={{
+                          fontSize: 12, fontStyle: 'italic',
+                          color: 'rgba(245,241,232,0.4)',
+                          textAlign: 'center', padding: '8px 0',
+                        }}>
+                          nothing noted here yet
+                        </div>
+                      ) : (
+                        <>
+                          {resCount > 0 && (
+                            <ArchiveSubList
+                              label="Good things"
+                              icon="✿"
+                              accent="oklch(0.88 0.09 78)"
+                              entries={bucket.resource}
+                            />
+                          )}
+                          {resCount > 0 && chalCount > 0 && (
+                            <div style={{ height: 10 }} />
+                          )}
+                          {chalCount > 0 && (
+                            <ArchiveSubList
+                              label="Small aches"
+                              icon="◌"
+                              accent="oklch(0.72 0.11 30)"
+                              entries={bucket.challenge}
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="ui" style={{
+            marginTop: 14, textAlign: 'center',
+            fontSize: 11, fontStyle: 'italic',
+            color: 'rgba(245,241,232,0.35)',
+          }}>
+            {inRange.length} entr{inRange.length === 1 ? 'y' : 'ies'} · {range === 'week' ? 'past 7 days' : 'past 30 days'}
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function PetalDot({ resourceKey, filled, phase }) {
-  const col = phase === 'am' ? 'oklch(0.78 0.08 215)' : 'oklch(0.86 0.05 75)';
+function ArchiveSubList({ label, icon, accent, entries }) {
+  return (
+    <div>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6,
+        padding: '0 4px',
+      }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 18, height: 18, borderRadius: '50%',
+          background: `color-mix(in oklch, ${accent}, transparent 80%)`,
+          color: accent, fontSize: 10,
+        }}>{icon}</span>
+        <span className="ui" style={{
+          fontSize: 10, fontWeight: 600, letterSpacing: 1.4, textTransform: 'uppercase',
+          color: accent,
+        }}>{label}</span>
+        <span className="mono" style={{
+          fontSize: 10, color: 'rgba(245,241,232,0.35)',
+          marginLeft: 'auto',
+        }}>{entries.length}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {entries.map((e, i) => (
+          <div key={i} style={{
+            padding: '9px 12px', borderRadius: 10,
+            background: 'rgba(245,241,232,0.035)',
+          }}>
+            <div className="mono" style={{
+              fontSize: 10, color: 'rgba(245,241,232,0.4)',
+              letterSpacing: 0.5, marginBottom: 3,
+            }}>
+              {formatAgo(e.ago)} · {e.phase === 'am' ? 'morning' : 'evening'}
+            </div>
+            <div className="serif" style={{
+              fontSize: 16, lineHeight: 1.35,
+              color: 'oklch(0.94 0.03 85)',
+            }}>{e.text}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PetalDot({ filled, accent }) {
+  const col = accent === 'am' ? 'oklch(0.78 0.08 215)' : 'oklch(0.86 0.09 78)';
   return (
     <div style={{
-      width: 32, height: 32, borderRadius: '50%',
+      width: 28, height: 28, borderRadius: '50%',
       background: filled
-        ? `radial-gradient(circle at 32% 30%, ${col}, oklch(0.35 0.07 230))`
-        : 'rgba(240,248,255,0.06)',
-      border: '1px solid ' + (filled ? 'transparent' : 'rgba(240,248,255,0.15)'),
+        ? `radial-gradient(circle at 32% 30%, ${col}, oklch(0.35 0.06 260))`
+        : 'rgba(245,241,232,0.06)',
+      border: '1px solid ' + (filled ? 'transparent' : 'rgba(245,241,232,0.12)'),
       flexShrink: 0,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 10, color: 'oklch(0.96 0.015 220)',
+      fontSize: 10, color: 'oklch(0.96 0.02 85)',
     }}>
-      {filled && <span style={{ fontSize: 12 }}>✿</span>}
+      {filled && <span style={{ fontSize: 11 }}>✿</span>}
     </div>
   );
 }
 
-function MandalaTappable({ resources, entries, phase, activeKey, onTap, size }) {
-  // Reuse the real mandala SVG but overlay invisible hit wedges
-  const cx = size / 2, cy = size / 2;
-  const outerR = size * 0.46;
-  const innerR = size * 0.16;
-  const slice = 360 / 8;
-  return (
-    <div style={{ position: 'relative', width: size, height: size }}>
-      <SatirMandala size={size} resources={resources} highlight={activeKey} complexity="full" />
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
-        style={{ position: 'absolute', inset: 0 }}>
-        {SATIR_RESOURCES.map((r, i) => {
-          const a1 = i * slice;
-          const a2 = (i + 1) * slice;
-          return (
-            <path key={r.key}
-              d={wedgePath(cx, cy, innerR, outerR, a1, a2)}
-              fill="transparent"
-              style={{ cursor: 'pointer' }}
-              onClick={() => onTap(r.key)} />
-          );
-        })}
-        {/* labels */}
-        {SATIR_RESOURCES.map((r, i) => {
-          const a = i * slice + slice / 2;
-          const rad = (a - 90) * Math.PI / 180;
-          const lx = cx + Math.cos(rad) * (outerR + 18);
-          const ly = cy + Math.sin(rad) * (outerR + 18);
-          const e = entries[r.key]?.[phase];
-          const on = !!(e?.resource?.trim() || e?.challenge?.trim());
-          return (
-            <text key={r.key} x={lx} y={ly}
-              fontSize="9" fontFamily="'Inter', sans-serif" fontWeight="600"
-              fill={on ? 'oklch(0.95 0.06 85)' : 'oklch(0.92 0.03 205)'}
-              fillOpacity={on ? 0.95 : 0.55}
-              textAnchor="middle" dominantBaseline="middle"
-              letterSpacing="0.1em" style={{ textTransform: 'uppercase', pointerEvents: 'none' }}>
-              {r.label}
-            </text>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function PetalSheet({ resource, phase, entry, onClose, onSave }) {
+function InlineEditor({ resource, phase, entry, onSave, onClose }) {
   const [res, setRes] = React.useState(entry.resource || '');
   const [chal, setChal] = React.useState(entry.challenge || '');
 
+  // sync when switching petals
   React.useEffect(() => {
     setRes(entry.resource || '');
     setChal(entry.challenge || '');
   }, [resource.key, phase]);
 
-  const phaseLabel = phase === 'am' ? 'This morning' : 'This evening';
-  const accent = phase === 'am' ? 'oklch(0.78 0.08 215)' : 'oklch(0.86 0.05 75)';
-
   return (
-    <div onClick={onClose} style={{
-      position: 'absolute', inset: 0, zIndex: 40,
-      background: 'oklch(0.16 0.04 245 / 0.72)',
-      backdropFilter: 'blur(10px)',
-      display: 'flex', alignItems: 'flex-end',
-      animation: 'fade 0.2s',
-    }} className="fade-in">
-      <div onClick={e => e.stopPropagation()} style={{
-        width: '100%',
-        background: 'linear-gradient(180deg, oklch(0.26 0.05 235) 0%, oklch(0.2 0.05 240) 100%)',
-        borderTopLeftRadius: 28, borderTopRightRadius: 28,
-        borderTop: '1px solid rgba(240,248,255,0.14)',
-        padding: '20px 22px 24px',
-        maxHeight: '75%', overflow: 'auto',
-        boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+    <div>
+      <div className="ui" style={{
+        fontSize: 11, fontStyle: 'italic',
+        color: 'rgba(245,241,232,0.55)', marginBottom: 12,
       }}>
-        {/* handle */}
-        <div style={{
-          width: 44, height: 4, borderRadius: 100,
-          background: 'rgba(240,248,255,0.2)',
-          margin: '0 auto 18px',
-        }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: '50%',
-            background: `radial-gradient(circle at 30% 28%, ${accent}, oklch(0.35 0.07 230))`,
-            boxShadow: `0 0 16px ${accent}40`,
-          }} />
-          <div style={{ flex: 1 }}>
-            <div className="ui" style={{
-              fontSize: 9, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
-              color: accent,
-            }}>{phaseLabel}</div>
-            <div className="serif" style={{ fontSize: 24, color: 'oklch(0.96 0.015 220)', lineHeight: 1 }}>
-              {resource.label}
-            </div>
-          </div>
-          <button onClick={onClose} className="ui" style={{
-            width: 32, height: 32, borderRadius: '50%', border: 'none',
-            background: 'rgba(240,248,255,0.08)',
-            color: 'rgba(240,248,255,0.6)', fontSize: 18, cursor: 'pointer',
-          }}>×</button>
-        </div>
-        <div className="ui" style={{
-          fontSize: 12, color: 'rgba(240,248,255,0.55)', marginBottom: 18,
-          fontStyle: 'italic',
-        }}>
-          {resource.hint}
-        </div>
-
-        {/* Resource field */}
-        <FieldBlock
-          label="Resource"
-          icon="✿"
-          accent={accent}
-          placeholder={placeholderFor(resource.key, 'resource', phase)}
-          value={res}
-          onChange={v => { setRes(v); onSave('resource', v); }}
-        />
-
-        <div style={{ height: 14 }} />
-
-        {/* Challenge field */}
-        <FieldBlock
-          label="Challenge"
-          sublabel="optional"
-          icon="◌"
-          accent="oklch(0.78 0.1 25)"
-          placeholder={placeholderFor(resource.key, 'challenge', phase)}
-          value={chal}
-          onChange={v => { setChal(v); onSave('challenge', v); }}
-        />
-
-        <div style={{ marginTop: 18 }}>
-          <PrimaryBtn variant="sand" onClick={onClose}>
-            Save this petal  ✿
-          </PrimaryBtn>
-        </div>
+        {resource.hint}
       </div>
+
+      <FieldBlock
+        label="One good thing"
+        icon="✿"
+        accent="oklch(0.88 0.09 78)"
+        placeholder={placeholderFor(resource.key, 'resource', phase)}
+        value={res}
+        onChange={v => { setRes(v); onSave('resource', v); }}
+      />
+
+      <div style={{ height: 12 }} />
+
+      <FieldBlock
+        label="One small ache"
+        sublabel="optional"
+        icon="◌"
+        accent="oklch(0.72 0.11 30)"
+        placeholder={placeholderFor(resource.key, 'challenge', phase)}
+        value={chal}
+        onChange={v => { setChal(v); onSave('challenge', v); }}
+      />
+
+      <button onClick={onClose} className="ui"
+        style={{
+          marginTop: 14, width: '100%',
+          padding: '11px 14px', borderRadius: 12, cursor: 'pointer', border: 'none',
+          background: 'oklch(0.86 0.09 78 / 0.25)',
+          color: 'oklch(0.94 0.06 82)',
+          fontSize: 13, fontWeight: 600, letterSpacing: 0.3,
+        }}>
+        Done  ✿
+      </button>
     </div>
   );
 }
@@ -310,22 +539,23 @@ function FieldBlock({ label, sublabel, icon, accent, placeholder, value, onChang
   return (
     <div>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8,
+        display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7,
       }}>
         <div style={{
-          width: 22, height: 22, borderRadius: '50%',
-          background: `${accent}22`, border: `1px solid ${accent}50`,
+          width: 20, height: 20, borderRadius: '50%',
+          background: `color-mix(in oklch, ${accent}, transparent 80%)`,
+          border: `1px solid color-mix(in oklch, ${accent}, transparent 55%)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: accent, fontSize: 11,
+          color: accent, fontSize: 10,
         }}>{icon}</div>
         <span className="ui" style={{
-          fontSize: 10, fontWeight: 600, letterSpacing: 1.8, textTransform: 'uppercase',
+          fontSize: 10, fontWeight: 600, letterSpacing: 1.6, textTransform: 'uppercase',
           color: accent,
         }}>{label}</span>
         {sublabel && (
           <span className="ui" style={{
             fontSize: 10, fontStyle: 'italic',
-            color: 'rgba(240,248,255,0.4)',
+            color: 'rgba(245,241,232,0.4)',
           }}>· {sublabel}</span>
         )}
       </div>
@@ -335,11 +565,12 @@ function FieldBlock({ label, sublabel, icon, accent, placeholder, value, onChang
         className="serif"
         style={{
           width: '100%', boxSizing: 'border-box',
-          padding: '12px 14px', borderRadius: 14,
-          background: 'rgba(240,248,255,0.04)',
-          border: '1px solid rgba(240,248,255,0.12)',
-          color: 'oklch(0.96 0.015 220)', fontSize: 15,
+          padding: '11px 13px', borderRadius: 12,
+          background: 'rgba(245,241,232,0.05)',
+          border: '1px solid rgba(245,241,232,0.12)',
+          color: 'oklch(0.96 0.02 85)', fontSize: 15,
           lineHeight: 1.4, outline: 'none', resize: 'none',
+          fontStyle: 'italic',
         }} />
     </div>
   );
@@ -369,7 +600,6 @@ function placeholderFor(key, kind, phase) {
     };
     return (phase === 'am' ? am : pm)[key] || 'one good thing…';
   }
-  // challenge
   const c = {
     physical: 'tight shoulders, not enough rest…',
     intellectual: 'brain feels foggy, scattered…',
@@ -383,4 +613,4 @@ function placeholderFor(key, kind, phase) {
   return c[key] || 'one small ache…';
 }
 
-Object.assign(window, { MandalaScreen });
+Object.assign(window, { MandalaScreen, MandalaHistory, ArchiveSubList });

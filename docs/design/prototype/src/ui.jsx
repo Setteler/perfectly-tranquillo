@@ -22,6 +22,7 @@ function Card({ children, style = {}, padded = true, onClick, tone = 'default' }
     default: { bg: 'rgba(240,248,255,0.04)', border: 'rgba(240,248,255,0.1)' },
     raised:  { bg: 'rgba(240,248,255,0.07)', border: 'rgba(240,248,255,0.14)' },
     sand:    { bg: 'oklch(0.86 0.05 75 / 0.08)', border: 'oklch(0.86 0.05 75 / 0.25)' },
+    ghost:   { bg: 'rgba(245,241,232,0.025)', border: 'rgba(245,241,232,0.12)' },
   };
   const t = tones[tone];
   return (
@@ -165,6 +166,177 @@ function Stone({ color = 'moon', size = 28, dim = false, seed = 0 }) {
           }} />
         </>
       )}
+    </div>
+  );
+}
+
+// Seashell — small scalloped shell with soft radial shading and ridges
+function Seashell({ color = 'pearl', size = 22, seed = 0, rotate }) {
+  const palette = {
+    pearl:  { a: 'oklch(0.97 0.01 80)',  b: 'oklch(0.88 0.03 60)',  c: 'oklch(0.72 0.05 50)',  ridge: 'oklch(0.6 0.05 50 / 0.35)' },
+    coral:  { a: 'oklch(0.92 0.05 30)',  b: 'oklch(0.78 0.09 25)',  c: 'oklch(0.58 0.11 22)',  ridge: 'oklch(0.45 0.1 20 / 0.4)' },
+    rose:   { a: 'oklch(0.94 0.03 10)',  b: 'oklch(0.82 0.06 5)',   c: 'oklch(0.65 0.09 355)', ridge: 'oklch(0.5 0.08 0 / 0.35)' },
+    butter: { a: 'oklch(0.96 0.04 90)',  b: 'oklch(0.86 0.07 80)',  c: 'oklch(0.7 0.09 70)',   ridge: 'oklch(0.55 0.08 65 / 0.35)' },
+    sky:    { a: 'oklch(0.93 0.03 220)', b: 'oklch(0.8 0.05 215)',  c: 'oklch(0.62 0.07 210)', ridge: 'oklch(0.48 0.06 210 / 0.4)' },
+    lilac:  { a: 'oklch(0.9 0.04 300)',  b: 'oklch(0.76 0.07 295)', c: 'oklch(0.56 0.09 290)', ridge: 'oklch(0.42 0.07 290 / 0.4)' },
+    moss:   { a: 'oklch(0.88 0.05 140)', b: 'oklch(0.72 0.07 145)', c: 'oklch(0.52 0.08 150)', ridge: 'oklch(0.38 0.07 150 / 0.4)' },
+    sand:   { a: 'oklch(0.94 0.04 75)',  b: 'oklch(0.8 0.06 65)',   c: 'oklch(0.62 0.08 55)',  ridge: 'oklch(0.45 0.07 55 / 0.4)' },
+  };
+  const p = palette[color] || palette.pearl;
+  const s = (seed * 9301 + 49297) % 233280 / 233280;
+  const tilt = rotate !== undefined ? rotate : -30 + Math.floor(s * 60);
+  const ridgeCount = 7;
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" style={{
+      transform: `rotate(${tilt}deg)`,
+      filter: 'drop-shadow(0 1.5px 2px rgba(0,0,0,0.25))',
+      flexShrink: 0,
+    }}>
+      <defs>
+        <radialGradient id={`shell-${color}-${seed}`} cx="50%" cy="18%" r="80%">
+          <stop offset="0%" stopColor={p.a} />
+          <stop offset="55%" stopColor={p.b} />
+          <stop offset="100%" stopColor={p.c} />
+        </radialGradient>
+      </defs>
+      {/* scallop shape — fan with scalloped bottom edge */}
+      <path
+        d="M20 4
+           C 10 4, 3 13, 3 22
+           C 3 27, 5 31, 7 33
+           Q 8 35, 9 33 Q 10 36, 11 33 Q 12 36, 13 34
+           Q 14 36, 15 34 Q 16 37, 17 34 Q 18 37, 19 34
+           Q 20 37, 21 34 Q 22 37, 23 34 Q 24 37, 25 34
+           Q 26 36, 27 34 Q 28 36, 29 33 Q 30 36, 31 33
+           Q 32 35, 33 33 C 35 31, 37 27, 37 22
+           C 37 13, 30 4, 20 4 Z"
+        fill={`url(#shell-${color}-${seed})`}
+        stroke={p.ridge} strokeWidth="0.5" strokeOpacity="0.5"
+      />
+      {/* radial ridges */}
+      {Array.from({ length: ridgeCount }).map((_, i) => {
+        const t = (i - (ridgeCount - 1) / 2) / ((ridgeCount - 1) / 2); // -1..1
+        const angle = t * 55; // degrees from vertical
+        const rad = (angle * Math.PI) / 180;
+        const r = 29;
+        const x = 20 + Math.sin(rad) * r;
+        const y = 5 + Math.cos(rad) * r * 0.95;
+        return (
+          <line key={i} x1="20" y1="7" x2={x} y2={y}
+            stroke={p.ridge} strokeWidth="0.6" strokeLinecap="round" opacity="0.55" />
+        );
+      })}
+      {/* umbo highlight */}
+      <ellipse cx="20" cy="8" rx="3" ry="2" fill={p.a} opacity="0.7" />
+    </svg>
+  );
+}
+
+// Glass jar holding seashells
+function Jar({ shells, width = 300, height = 320 }) {
+  // jar inner bounds for shell placement
+  const innerX = 0.18 * width;
+  const innerRight = 0.82 * width;
+  const floorY = 0.88 * height;
+  const ceilY = 0.28 * height;
+  const innerW = innerRight - innerX;
+  const innerH = floorY - ceilY;
+
+  // lay out shells in a stable stacked pile bottom-up
+  const placed = React.useMemo(() => {
+    const out = [];
+    const cols = 5;           // fewer columns → bigger shells
+    const rowH = 30;          // vertical spacing between rows
+    const shellW = 38;
+    shells.forEach((sh, i) => {
+      const row = Math.floor(i / cols);
+      const colCount = cols - (row % 2); // stagger
+      const col = i % colCount;
+      // horizontal spread: center rows, add some jitter
+      const jitterX = ((i * 53) % 11) - 5;
+      const jitterY = ((i * 29) % 9) - 4;
+      const spread = innerW - shellW - 6;
+      const x = innerX + 3 + (col + 0.5 + (row % 2) * 0.5) * (spread / colCount) + jitterX - shellW / 2 + (spread / colCount) / 2;
+      const y = floorY - 20 - row * rowH + jitterY;
+      const rot = ((i * 47) % 80) - 40;
+      out.push({ ...sh, x, y, rot, z: -row });
+    });
+    return out.sort((a, b) => a.z - b.z);
+  }, [shells]);
+
+  return (
+    <div style={{ position: 'relative', width, height, margin: '0 auto' }}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}
+        style={{ position: 'absolute', inset: 0 }}>
+        <defs>
+          <linearGradient id="jar-glass" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="oklch(0.85 0.04 210)" stopOpacity="0.22" />
+            <stop offset="20%" stopColor="oklch(0.95 0.02 210)" stopOpacity="0.08" />
+            <stop offset="50%" stopColor="oklch(0.98 0.01 210)" stopOpacity="0.04" />
+            <stop offset="80%" stopColor="oklch(0.85 0.04 210)" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="oklch(0.6 0.06 220)" stopOpacity="0.28" />
+          </linearGradient>
+          <linearGradient id="jar-rim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="oklch(0.9 0.02 210)" stopOpacity="0.5" />
+            <stop offset="100%" stopColor="oklch(0.7 0.04 220)" stopOpacity="0.2" />
+          </linearGradient>
+          <radialGradient id="jar-floor" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="oklch(0.85 0.05 70)" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="oklch(0.6 0.06 60)" stopOpacity="0.1" />
+          </radialGradient>
+        </defs>
+
+        {/* jar body (back layer — behind shells) */}
+        <path
+          d={`M ${0.22 * width} ${0.18 * height}
+              L ${0.22 * width} ${0.12 * height}
+              Q ${0.22 * width} ${0.08 * height}, ${0.26 * width} ${0.08 * height}
+              L ${0.74 * width} ${0.08 * height}
+              Q ${0.78 * width} ${0.08 * height}, ${0.78 * width} ${0.12 * height}
+              L ${0.78 * width} ${0.18 * height}
+              Q ${0.88 * width} ${0.22 * height}, ${0.88 * width} ${0.32 * height}
+              L ${0.88 * width} ${0.88 * height}
+              Q ${0.88 * width} ${0.94 * height}, ${0.82 * width} ${0.94 * height}
+              L ${0.18 * width} ${0.94 * height}
+              Q ${0.12 * width} ${0.94 * height}, ${0.12 * width} ${0.88 * height}
+              L ${0.12 * width} ${0.32 * height}
+              Q ${0.12 * width} ${0.22 * height}, ${0.22 * width} ${0.18 * height} Z`}
+          fill="url(#jar-glass)"
+          stroke="oklch(0.85 0.04 210 / 0.28)"
+          strokeWidth="1.5"
+        />
+        {/* sand floor */}
+        <ellipse cx={width / 2} cy={0.9 * height} rx={0.36 * width} ry={0.03 * height}
+          fill="url(#jar-floor)" />
+      </svg>
+
+      {/* shells layer */}
+      <div style={{ position: 'absolute', inset: 0 }}>
+        {placed.map((sh, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: sh.x, top: sh.y,
+          }}>
+            <Seashell color={sh.color} size={38} seed={i} rotate={sh.rot} />
+          </div>
+        ))}
+      </div>
+
+      {/* jar front highlight (overlay) */}
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}
+        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {/* left highlight streak */}
+        <path d={`M ${0.18 * width} ${0.28 * height} Q ${0.16 * width} ${0.55 * height}, ${0.19 * width} ${0.82 * height}`}
+          stroke="oklch(1 0 0 / 0.22)" strokeWidth="4" fill="none" strokeLinecap="round" />
+        {/* thin right highlight */}
+        <path d={`M ${0.82 * width} ${0.3 * height} Q ${0.85 * width} ${0.6 * height}, ${0.82 * width} ${0.8 * height}`}
+          stroke="oklch(1 0 0 / 0.1)" strokeWidth="2" fill="none" strokeLinecap="round" />
+        {/* rim shine */}
+        <rect x={0.22 * width} y={0.08 * height} width={0.56 * width} height="2"
+          fill="url(#jar-rim)" />
+        {/* neck shine */}
+        <path d={`M ${0.26 * width} ${0.1 * height} L ${0.74 * width} ${0.1 * height}`}
+          stroke="oklch(1 0 0 / 0.35)" strokeWidth="1" fill="none" />
+      </svg>
     </div>
   );
 }
@@ -325,7 +497,7 @@ function ScreenHeader({ eyebrow, title, onBack, action }) {
 }
 
 Object.assign(window, {
-  Chip, Card, PrimaryBtn, ProgressRing, Stone, TabBar,
+  Chip, Card, PrimaryBtn, ProgressRing, Stone, Seashell, Jar, TabBar,
   IconHome, IconSprout, IconCircle, IconFlower, IconMandala, IconBack, IconGear,
   ScreenHeader,
 });

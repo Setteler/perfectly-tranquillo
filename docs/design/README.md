@@ -1,6 +1,6 @@
 # Handoff: Perfectly Tranquillo
 
-A gamified mental-wellness Android app for quick (≤60s) daily check-ins, built around **Virginia Satir's 8 self-resources mandala**. Designed for someone who wants the benefits of journaling/meditation apps without the heaviness — no long prompts, no AI chat, just small actions that fill in a living mandala across the day.
+A gamified mental-wellness Android app for quick (≤60s) daily check-ins, built around **Virginia Satir's 8 self-resources mandala**. Designed for someone who wants the benefits of journaling/meditation apps without the heaviness — no long prompts, no AI chat, just small soft actions that fill in a living mandala across the day.
 
 ---
 
@@ -8,9 +8,9 @@ A gamified mental-wellness Android app for quick (≤60s) daily check-ins, built
 
 Everything in `/prototype` is a **design reference** — an interactive HTML + React (via inline Babel) prototype that shows the intended look, interaction model, and state transitions. It is **not production code** and should not be shipped or literally ported.
 
-The task is to **recreate these designs natively for Android** (Jetpack Compose recommended — animations and custom canvas drawing for the mandala will be dramatically easier than in XML/Views). If the team prefers cross-platform, React Native + Reanimated + Skia is a reasonable alternative. Either way, re-implement using the codebase's established patterns, navigation library, theming system, and component conventions — don't wrap a WebView.
+The task is to **recreate these designs natively for Android** (Jetpack Compose strongly recommended — the animations and custom mandala canvas will be dramatically easier than in XML/Views). If the team prefers cross-platform, React Native + Reanimated + Skia is a reasonable alternative. Either way, re-implement using the codebase's established patterns, navigation library, theming system, and component conventions — don't wrap a WebView.
 
-Speaker-to-developer: open `prototype/index.html` in a browser to see the full app; the top-right gear leads to Settings, bottom nav cycles Home/Habits/Mandala/Garden, and the floating Tweaks button (bottom-right of page) flips theming knobs.
+**To preview:** open `prototype/index.html` in a browser. The top-right gear opens Settings; bottom nav cycles Home/Habits/Mandala/Garden; the floating "Tweaks" button (bottom-right of page, not of device) exposes palette + sound + demo toggles. A fake notification fires ~8s after load.
 
 ---
 
@@ -22,21 +22,21 @@ Speaker-to-developer: open `prototype/index.html` in a browser to see the full a
 
 ## Product summary
 
-**Name:** Perfectly Tranquillo (Spanish-ish phrasing chosen by the user)
-**Platform:** Android phone, single user, offline-first
-**Audience:** Someone burned out on journaling apps and AI-chat wellness tools — wants quick gamified check-ins
-**Core loop:** Open app → see today's mandala → tap a few habits as the day goes → fill mandala petals with a resource + optional challenge morning & evening → collect sea pebbles
-**Philosophy:** "Small things, often." No points, no XP, no streakshaming. Soft progress rings + collectible sea pebbles.
+- **Name:** Perfectly Tranquillo
+- **Platform:** Android phone, single-user, offline-first (no accounts)
+- **Audience:** Someone burned out on journaling apps and AI-chat wellness tools — wants quick gamified check-ins
+- **Core loop:** Open app → see today's mandala → tap habits through the day → fill mandala petals with a resource + optional challenge, morning & evening → collect sea pebbles in the Garden
+- **Philosophy:** "Small things, often." No points, no XP, no streakshaming. Soft progress rings + collectible sea pebbles + gentle language.
 
 ---
 
-## Navigation model (important — this was iterated on)
+## Navigation model
 
 **Bottom tab bar (4 tabs):**
 1. **Home** — today's mandala, intention, quick-action cards for Morning/Evening/Breath/Focus/Break
 2. **Habits** — tabbed: Daily (7 everyday habits) + Weekly (day-of-week habits)
-3. **Mandala** — dedicated screen for filling Satir resource entries (AM/PM)
-4. **Garden** — progress: week strip, collected pebbles, 7-day resource averages
+3. **Mandala** — dedicated screen for filling Satir resource entries (AM/PM) — tap petal → enter resource + optional challenge
+4. **Garden** (code name: `progress`) — week strip, collected pebbles, 7-day resource averages, archive of past mandala entries
 
 **Not in bottom nav — reached from Home cards or chrome:**
 - Morning intention flow (quick-action card on Home)
@@ -50,320 +50,347 @@ Speaker-to-developer: open `prototype/index.html` in a browser to see the full a
 
 ## Design tokens
 
-### Color palette (oklch — convert to hex via your tooling if needed)
+### Color palette — **four named ocean palettes, user-switchable**
 
-**Base (sea/night):**
-- `--ink:       oklch(0.28 0.06 230)` · deep sea blue (backgrounds)
-- `--ink-2:     oklch(0.34 0.07 225)`
-- `--ink-3:     oklch(0.42 0.08 220)`
-- `--deep:      oklch(0.50 0.09 220)`
-- `--sea:       oklch(0.65 0.10 215)` · mid ocean
-- `--sky:       oklch(0.82 0.09 210)` · AM accent (primary)
-- `--foam:      oklch(0.95 0.03 200)` · text
-- `--mist:      oklch(0.97 0.02 210)`
+The app supports 4 palette directions. Default is **Deep Tide**. Each palette sets a page background (the wallpaper around the device in the prototype — ignore for native) and a device background (what matters for the Android app). Kelp Forest also overlays a subtle wavy SVG texture on the device bg.
 
-**Warm (sand/dawn):**
-- `--sand:      oklch(0.88 0.07 85)` · PM accent / sand stones / highlights
-- `--sand-2:    oklch(0.82 0.09 75)`
-- `--stone:     oklch(0.78 0.06 70)`
-- `--coral:     oklch(0.78 0.10 40)` · weekly-habit stones, challenge markers
-- `--shell:     oklch(0.92 0.05 60)`
+All colors authored in `oklch()`. Convert to hex via your tooling.
 
-**Page gradient (top→bottom):**
-Radial highlights at 85% 95% (warm sand) and 10% 10% + 80% 30% (sea), over a vertical linear from `oklch(0.40 0.09 220)` → `oklch(0.28 0.07 225)` → `oklch(0.22 0.06 230)`. A "warmth" knob (0–100) blends the warm radials in/out against the cool ones.
+**Deep Tide** (default) — dark turquoise + warm sand
+- base stops: `oklch(0.30 0.07 195)` → `oklch(0.22 0.06 200)` → `oklch(0.16 0.05 205)`
+- warm highlight: `oklch(0.88 0.06 80 / 0.22)` top-right radial
+- cool accent: `oklch(0.55 0.09 195)` top-left radial
+
+**Tidepool** — cleaned-up deep blue (less purple than original)
+- base: `oklch(0.24 0.07 230)` → `oklch(0.18 0.06 232)` → `oklch(0.14 0.05 235)`
+
+**Sea Glass** — brighter teal, twilight lagoon
+- base: `oklch(0.36 0.08 200)` → `oklch(0.26 0.07 205)` → `oklch(0.20 0.06 210)`
+
+**Kelp Forest** — deep teal, with repeating SVG wave texture overlay
+- base: `oklch(0.22 0.07 180)` → `oklch(0.16 0.06 182)` → `oklch(0.12 0.05 185)`
+- `waves: true` — adds a repeating wavy-line SVG pattern at low opacity on top of the bg
+
+The wave-texture overlay (Kelp only) is an SVG pattern of horizontal wavy lines, ~25% opacity, tiled over the device background. Source: `prototype/src/app.jsx` constant `PALETTES.kelp`.
+
+### Accent / content colors (shared across palettes)
+- warm gold (highlights, PM mandala petals, intention chip): `oklch(0.86 0.05 75)` through `oklch(0.88 0.07 85)`
+- cool blue (AM mandala petals, eyebrow labels): `oklch(0.78 0.08 215)` through `oklch(0.82 0.07 210)`
+- body text: `oklch(0.96 0.015 220)` (near-white, faint blue cast)
+- muted text: `rgba(245,241,232,0.55)` — `rgba(245,241,232,0.75)`
+- thin divider lines: `rgba(245,241,232,0.10)`
 
 ### Typography
 
-Three font roles, loaded from Google Fonts. Default theme = Fraunces + Quicksand (the "whimsical" pairing).
+Fonts are Google-hosted. The prototype ships a "font" tweak with four options — **Caveat + Nunito is the ship default**.
 
-| Role      | Class   | Font                     | Weight | Style                   | Use                                         |
-|-----------|---------|--------------------------|--------|-------------------------|---------------------------------------------|
-| Display   | `.serif`| Fraunces                 | 400    | italic, letter −0.005em | Titles, quotes, affirming copy              |
-| UI        | `.ui`   | Quicksand                | 500    | normal                  | Buttons, labels, hints                      |
-| Mono      | `.mono` | JetBrains Mono           | 400    | normal                  | Streak counts, numbers, metadata            |
+- **Display serif (default):** Caveat 500 (handwritten casual) — greetings, headings, card titles. Runs small, so sizes are ~1.25× other serifs.
+- **Body:** Nunito 300/400/500/600 — all UI text, buttons, labels
 
-Font-pair alternates (user-selectable in Settings):
-- **fraunces** (default): Fraunces italic + Quicksand
-- **instrument**: Instrument Serif + Inter
-- **caveat**: Caveat handwritten + Nunito
-- **cormorant**: Cormorant Garamond italic + Inter
+Type scale (caveat default):
+- Greeting H1: ~36–42px Caveat 500, line-height 1.05
+- Section title: ~26px Caveat 500
+- Card title: ~20px Caveat 500
+- Body: 13–14px Nunito 400/500
+- Eyebrow (uppercase small-caps): 10–11px Nunito 600, letter-spacing 1.6–2.8px, `text-transform: uppercase`
 
-### Spacing & radii
+Other font options exposed but deprioritized: Instrument Serif + Inter, Fraunces italic + Quicksand, Cormorant Garamond italic + Inter. **Ship with Caveat + Nunito unless product disagrees.**
 
-- Screen padding: `16px 20px` horizontal, `120px` bottom to clear tab bar
-- Card padding: `18px`
-- Card radius: `22px` (large cards), `20px` (inline), `18px` (rows), `14px` (inputs)
-- Tab-bar radius: `28px`, floats `bottom: 40px` inside device, `left/right: 14px`
-- Pill/chip radius: `100px`
-- Stone size: typically `20–28px`
+### Spacing scale
 
-### Shadows & glows
+Rough, but consistent in the prototype:
+- 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 30, 40
+- Screen horizontal padding: 16–20px
+- Card padding: 14–18px
+- Section gap: 14–20px
+- Device bottom padding when tab bar visible: 100px (to clear the floating tab pill)
 
-- Primary button: `0 8px 24px -8px oklch(0.52 0.09 225 / 0.5)` + inset highlight
-- Stone: `drop-shadow(0 3px 4px rgba(0,0,0,0.28))` + inset radial highlight & dark rim
-- Notification toast: `0 14px 32px -8px rgba(0,0,0,0.5)`
-- Tab bar: `0 12px 30px -10px rgba(0,0,0,0.4)`, backdrop blur 24px
+### Border radius
 
-### Motion
+- Cards: 18–20px
+- Pills (intention chip, tab bar): 22–100px (full round for pill shapes)
+- Icons/avatars: full round
+- Buttons: 14–16px
 
-- Screen fade-in: 500ms ease-out (`@keyframes fade-in` translating 6px up + fading)
-- Mandala core: `breathe` 6s infinite (scale 1 → 1.08 → 1)
-- Progress ring: `stroke-dashoffset 0.6s ease`
-- Surprise-me stone: `spin` 8s linear infinite
-- Toast entrance: translate-Y −120% → 0, cubic-bezier(0.2, 0.9, 0.3, 1.2), 400ms
-- Petal bottom-sheet: fade/slide from bottom
+### Shadows & glass
+
+- Glassmorphic cards: `backdrop-filter: blur(10–20px)`, bg `oklch(...  / 0.10–0.15)`, 1px border at `rgba(255,255,255,0.10–0.25)`
+- Floating elements (tab bar, gear): `backdrop-filter: blur(20px)`, stronger bg opacity (~0.5–0.6)
+- Device drop shadow: `0 30px 60px -20px rgba(0,0,0,0.65)`
+
+### Paper grain + vignette
+
+On the device background, a subtle SVG turbulence noise is layered at `opacity: 0.35, mix-blend-mode: overlay` for warmth. A radial vignette darkens corners at ~25% black. See `index.html` `.grain` and `.vignette` rules. Optional but adds a lot.
 
 ---
 
 ## Screens
 
-### 1. Home
+### 1. Home (`screens-home.jsx`)
+**Purpose:** single-glance status of today. User sees mood, today's mandala, quick actions.
 
-Living mandala + today's intention + quick-action cards.
+**Layout (top → bottom):**
+- Eyebrow: "TUESDAY · DAY 12" (cool blue, uppercase, tiny letter-spaced) + serif greeting "Bloom gently, {name}." + top-right gear icon
+- **Intention pill** (full-round, warm-gold outlined): small dot + "INTENTION" eyebrow + serif intent text (e.g. "Gentle focus")
+- **Satir Mandala** (240px, centered): simplified 8-petal ring. AM petals fill cool-blue, PM petals warm-gold. Info "?" button in top-right corner expands a tutorial card about the 8 resources.
+- **Daily snapshot row:** 2–3 stat pills showing habits done / mandala petals filled / streak
+- **"One good thing" card:** empty by default each day, large Caveat text field, placeholder "the sound of rain before I even opened my eyes". Resets at midnight.
+- **Quick-action cards (2-col grid):** Morning intention · Evening reflection · Breath · Focus · Take a break — each a glass card with an inline SVG icon and serif title
+- Bottom: floating tab bar
 
-- **Top**: greeting row with user's name, time-based (morning/afternoon/evening)
-- **Mandala hero**: 280px SatirMandala, with a small `?` button that opens an inline explainer of the 8 resources
-- **Today's intention card**: one line (from Morning flow), italic Fraunces, with gentle sand stone next to it
-- **Quick-action cards** (grid, 2 per row): Morning, Evening, Breath, Focus, Break. Each = small card with circular gradient stone on left, serif title, `.ui` subtitle, chevron right.
-- **Today's resource peek**: small strip of 8 PetalDots for the 8 Satir resources, showing which have entries
+### 2. Habits (`screens-habits.jsx`)
+**Purpose:** check off the day's habits; see streaks.
 
-### 2. Habits (tabbed: Daily / Weekly)
+**Layout:**
+- Header "Habits" + sub-tab toggle: **Daily · Weekly**
+- Daily tab: list of 7 habit rows. Each row: checkbox circle (fills warm-gold when tapped) + label (serif) + hint (muted, small) + streak chip ("🌱 4") + optional reminder time (eyebrow, right-aligned, e.g. "07:00")
+- Weekly tab: same row style, with a day-of-week pill ("MON", "TUE", …) instead of reminder time
+- Tapping a row toggles `done`; animated soft flash + optional chime
+- Settings icon on each row opens per-habit editor (label, hint, reminder time)
 
-- **Tab pill** at top, shows count pill `done/total` per tab
-- **Daily tab**:
-  - Summary card at top: ProgressRing (52px) + "N left to tend" + subtitle "every day · soft green stones"
-  - Rows: `HabitRow` components — toggle check, label (Fraunces 17px), hint (11px), streak pill, bell icon that opens a time picker inline, optional remove
-- **Weekly tab**:
-  - Day strip: 7 buttons S/M/T/W/T/F/S with a mini conic-gradient progress ring per day showing done/total for that day; amber dot under "today"; tap to select day
-  - Selected-day panel: "Tuesday" serif 22px + "today" badge if applicable
-  - Rows for that day's weekly habits (coral stones when done)
-  - Add-habit input at bottom: "add a Tuesday habit…" + `+` button
-- **HabitRow reminder UI** (bell icon → expanded state):
-  - `<input type="time">` native, colorScheme dark, padding 6×10, radius 10, JetBrains Mono
-  - "Clear" button when set
-  - Italic preview: `you'll get a soft reminder: "It's time for [habit] in the garden"`
+**Reminder time:** optional `remindAt: 'HH:MM'` per habit. If present and `notifMode !== 'silent'`, a fake Android-style notification fires at that time (see Notifications below).
 
-### 3. Mandala
+### 3. Mandala (`screens-mandala.jsx`)
+**Purpose:** the centerpiece. Fill each of 8 resources with a morning and/or evening entry.
 
-Dedicated per-petal journal screen.
+**Layout:**
+- Header "Your mandala today" + AM/PM phase toggle at top (two pills)
+- Large interactive mandala (~280px): tapping any of 8 petals opens an entry modal
+- Below: grid of 8 resource chips (Body, Mind, Heart, Senses, Connection, Nourish, Place, Spirit) — each shows current state (empty · AM filled · PM filled · both)
+- **Entry modal:** opens when a petal is tapped. Two fields:
+  - **Resource** (required): "what nourished this today?" — multiline soft input, serif
+  - **Challenge** (optional): "what was hard?" — smaller, muted field
+  - Save button (warm-gold full-round), cancel returns without saving
+- On save, the petal animates fill (easing 0.6s, soft glow)
 
-- Header: eyebrow "Your inner landscape", title "Mandala"
-- Explanation paragraph: "Eight resources of the self. Each morning and evening, tap a petal and name one good thing it's receiving — and, if you need to, one thing that's asking for care."
-- **AM/PM toggle** (auto-selects by hour of day): `◐ Morning` / `◑ Evening`
-- **Tappable mandala** (300px): base SatirMandala rendered with label text around the perimeter; an overlay SVG of invisible `wedgePath` hit regions per petal
-- Subtitle: `tap any petal to tend it · N/8 filled`
-- **Resource list** (below mandala): 8 rows, one per Satir resource, each with a PetalDot (filled state if has entry), label, and a preview of the current entry (`✿ [resource text]` or `◌ [challenge text]`) or the default hint
-- **PetalSheet** (bottom sheet when a petal is tapped):
-  - Slides up from bottom, translucent dark backdrop (`oklch(0.16 0.04 245 / 0.72)` + 10px blur)
-  - Handle bar (44×4px) at top
-  - Header: phase glyph stone + eyebrow ("This morning" / "This evening") + serif title (resource label, 24px) + close ×
-  - Italic hint line under header
-  - **Resource field** (accent: sky blue for AM, sand for PM):
-    - Icon chip with `✿` + label "RESOURCE"
-    - Textarea 2 rows, Fraunces 15px, placeholder rotates per-resource per-phase (see placeholders in `screens-mandala.jsx`)
-  - **Challenge field** (accent: coral):
-    - Icon chip with `◌` + label "CHALLENGE" + sublabel "optional"
-    - Same textarea pattern
-  - Primary button "Save this petal ✿" (sand variant)
-- Entries live-update the mandala petal fill: resource-only = 0.9, challenge-only = 0.3, both = 0.6 (softens)
+Entries are stored on the `state.mandalaEntries` object, keyed by resource + phase. At midnight they flush into `mandalaHistory` (see Data model).
 
-### 4. Garden (Progress)
+### 4. Garden / Progress (`screens-progress.jsx`)
+**Purpose:** gentle progress view. No points, no leaderboards.
 
-Week strip, stones collected, 7-day resource averages.
+**Layout:**
+- Week strip at top: 7 days, each a small mandala thumbnail showing that day's fill
+- **Sea pebbles collection:** a flat jar-of-pebbles visual. Each pebble is a kind: `moon` (pale gold), `jade` (green), `shell` (cream), etc. Pebbles are awarded for each completed day segment (morning / evening / daily-habit-run). Shown as stacked/scattered in the jar, tap one to see its source.
+- **7-day resource averages:** small bar-per-petal showing how full each resource has been on average — reveals what's being tended vs. neglected
+- **Archive:** tap-through to past mandala entries (list view, grouped by date)
 
-- **Week strip**: 7 mini mandalas showing each day's overall fill, today highlighted
-- **Stones collected** card: scattered pebbles in a 110px canvas, with a legend below showing counts by kind (moon/jade/sand/coral/deep)
-- **Resource strand**: 8 horizontal mini bars, one per Satir resource, showing 7-day average of AM+PM fill
+### 5. Morning (`screens-morning.jsx`)
+Short flow (≤60s), 3–4 steps:
+1. Mood selection: 4 soft illustrated mood cards (bright · cloudy · heavy · unsure)
+2. Intention picker: 6–8 chip options + custom input ("Gentle focus", "Stay curious", "Slow down", etc.)
+3. Optional: one-line "what's one small good thing ahead?"
+4. Confirmation: soft animation, return to Home with state set.
 
-### 5. Morning intention
+Sets `state.morningDone = true` + `state.intent` + `state.morningMood` + optionally `state.goodThing`.
 
-Three-screen soft-edge flow (skippable).
+### 6. Evening (`screens-morning.jsx` second export)
+Short flow: reflection, mandala-phase nudge (PM), optional note. Sets `state.eveningDone = true`.
 
-- Sunrise art (SVG gradient sun, low horizon)
-- Rotating inspirational message (7 messages, one per day-of-year mod 7)
-- Step 1: "one good thing ahead today?" — optional textarea; skip button
-- Final: "you'll collect a moon stone for this morning"
-- Completion adds a `moon` pebble + fills `intellectual.am` resource if text entered
+### 7. Breath (`screens-breath.jsx`)
+Box breathing, 4·4·4·4 (inhale / hold / exhale / hold). Full-screen, single expanding/contracting circle with a soft glow, phase label underneath. Sessions: 1min / 3min / 5min. Haptic on phase change (native).
 
-### 6. Evening reflection
+### 8. Focus (`screens-focus.jsx`)
+Simple countdown timer. Four presets: 10 / 15 / 25 / 45 min. Big circular progress ring, minutes-remaining in center. Play/pause/stop.
 
-- Single screen with two quick prompts
-- Adds a `sand` pebble on completion + fills `spiritual.pm`
+### 9. Break (`screens-break.jsx`)
+19 curated micro-break suggestions + "surprise me" button. List cards with icon + title + 1-line description + duration (30s–3min).
 
-### 7. Breath (box breathing 4·4·4·4)
-
-- Full-screen breathing orb that scales/fades over 4-sec phases: Inhale / Hold / Exhale / Hold
-- 6 cycles by default, text cycles with phase
-- On complete: fills `emotional.pm` + 1 moon pebble
-
-### 8. Focus
-
-- 4 chips: 10 / 15 / 25 / 45 min
-- Large mandala slowly filling as session progresses (uses `resources` with `am` growing)
-- On complete: adds `deep` pebble + fills `physical.pm` and `intellectual.pm`
-
-### 9. Take a break
-
-**19 breaks across 4 categories** — see `screens-break.jsx` for full text, but the key surprise here is a large **Surprise me** hero button at the top.
-
-Categories & counts (filter chips):
-- **Tiny** (≤30s): Look far, Three long breaths, Slow sip of water, Do absolutely nothing, Shake it off
-- **Sensory**: Five senses, Cold water on wrists, Find a good smell, One song eyes closed
-- **Body**: Soft stretch, Tall spine, A small walk, Shake it off, Posture
-- **World**: Go look at the sun, Find a piece of sky, Look for a flower, **Go pet your cat**, Text someone kind, Tidy one small thing, Open a window
-
-Each break has:
-- `id`, `kind` (tiny/sensory/body/world), `title`, `subtitle`, `duration` (sec), `resource` (Satir key it feeds), `prompt` (spoken-voice instruction), `color` (accent stone color)
-
-**Surprise me button** at top: large card, conic-gradient spinning stone with ✨, picks a random break from the currently-active filter. Brief 450ms reveal pulse, then auto-starts the timer.
-
-During break: 240px ProgressRing with countdown seconds, serif prompt below. On complete: +0.22 fill to the break's mapped resource + 1 jade pebble.
-
-### 10. Settings
-
-- Your habits list (with add/remove)
-- Font pairing picker (4 options listed above)
-- Sound toggle
-- "Trigger demo notification" button
+### 10. Settings (`screens-settings.jsx`)
+Sections:
+- **Sound:** toggles for chime-on-tap, ambient music, music volume slider
+- **Ambient sound picker:** waves · birds · singing bowls · music · none
+- **Notification mode:** silent · sound · vibrate (radio)
+- **Appearance:** palette picker (4 palettes), font picker, dark/light (only dark is shipped currently)
+- **Notifications:** "trigger demo reminder" button for QA
+- **Data:** export, reset day (clears today, flushes to history), clear all (wipe)
 
 ---
 
-## Key reusable components
+## Interactions & behavior
 
-### Stone (sea pebble)
+### State persistence
+- Everything in the prototype's `INITIAL_STATE` (`src/app.jsx`) is in-memory only. In the real app, persist to Room / DataStore.
+- The `mandalaHistory` grows append-only; old entries are shown in Garden archive.
 
-Oval pebble with layered radial gradient, glossy highlight, subtle speckle, randomized tilt. **Not a circle.**
+### Midnight rollover (important)
+At 00:00 local, the app:
+1. Flushes today's `mandalaEntries` into `mandalaHistory` (each entry: `{date, key, phase, kind: 'resource'|'challenge', text}`)
+2. Clears `goodThing`, `morningDone`, `eveningDone`
+3. Resets all `habits.done` to `false` (streaks keep their value — only reset if yesterday was missed)
+4. Resets `resources` to all zeros
+
+Prototype has a `Simulate new day` tweak button that forces this for demo.
+
+### Notifications (`notifications.jsx`)
+An Android-style notification toast slides in from the top when:
+- A habit with `remindAt` hits its time and isn't done
+- The QA "trigger demo reminder" is tapped
+
+Design: translucent dark card, app icon (wave glyph) + "Perfectly Tranquillo" + habit label + hint + dismiss X. Tapping it routes to Habits.
+
+### Animations
+- Fade-in on route change: 0.5s ease-out, 6px translateY
+- Mandala petal fill: 0.6s ease-out with soft glow burst
+- Breathing circle: scale 1 ↔ 1.08 on breath phases
+- Slow float on floating icons (music button, quick-peek): 6px Y, infinite
+- All transitions should feel gentle — no bounce, no overshoot.
+
+### Sound
+- Tap chime: a single soft bowl/chime (~200ms) on habit tick and mandala save
+- Ambient: looping underscore based on user's pick (waves / birds / bowls / music). Auto-ducks on notifications.
+- See `src/ambient.jsx` for the web-audio implementation; on Android use ExoPlayer with a looped asset per ambient kind.
+
+### Demo states in the prototype
+- `state.habits[*].streak` is a pre-seeded number (2–11) for richer UI
+- `state.mandalaHistory` is seeded with ~26 entries across the last 14 days (see `INITIAL_STATE` in `app.jsx`) so Garden isn't empty on first open
+- `state.stones` is seeded with 4 pebbles
+
+---
+
+## Data model
+
+```ts
+type Habit = {
+  id: string;
+  label: string;
+  hint: string;
+  done: boolean;
+  streak: number;
+  remindAt: string; // 'HH:MM', optional
+  day?: number;     // 0–6 (weekly habits only)
+};
+
+type Resources = Record<
+  'physical' | 'intellectual' | 'emotional' | 'sensory' |
+  'interactional' | 'nutritional' | 'contextual' | 'spiritual',
+  { am: number; pm: number } // 0–1 fills
+>;
+
+type MandalaEntry = {
+  resource?: string;   // what nourished (required to count)
+  challenge?: string;  // what was hard (optional)
+};
+
+type MandalaHistoryRow = {
+  date: string;        // 'YYYY-MM-DD'
+  key: keyof Resources;
+  phase: 'am' | 'pm';
+  kind: 'resource' | 'challenge';
+  text: string;
+};
+
+type Stone = { kind: 'moon' | 'jade' | 'shell' | 'coral'; label: string };
+
+type AppState = {
+  name: string;
+  morningDone: boolean;
+  eveningDone: boolean;
+  goodThing: string;
+  intent: string;
+  morningMood: 'bright' | 'cloudy' | 'heavy' | 'unsure';
+  habits: Habit[];
+  weeklyHabits: Habit[];
+  resources: Resources;
+  mandalaEntries: Record<keyof Resources, { am?: MandalaEntry; pm?: MandalaEntry }>;
+  mandalaHistory: MandalaHistoryRow[];
+  stones: Stone[];
+  sound: boolean;
+  ambientSound: 'waves' | 'birds' | 'bowls' | 'music' | 'none';
+  notifMode: 'silent' | 'sound' | 'vibrate';
+  theme: 'dark' | 'light';
+  font: 'caveat' | 'instrument' | 'cormorant' | 'fraunces';
+  complexity: 'minimal' | 'full';
+};
+```
+
+The eight Satir resource keys (order matters for mandala petal position, starting 12 o'clock, clockwise):
+`physical, intellectual, emotional, sensory, interactional, nutritional, contextual, spiritual`
+
+Labels shown to the user:
+Body · Mind · Heart · Senses · Connection · Nourish · Place · Spirit
+
+---
+
+## The mandala (custom drawing)
+
+Source: `src/mandala.jsx` — `<SatirMandala size resources highlight showLabels animate />`
+
+**Geometry:**
+- 8 equal wedges around the center, each 45° minus a 2.5° gap on each side for separation
+- Three concentric radii: `outerR = size * 0.44`, `midR = size * 0.31`, `innerR = size * 0.18`
+- Inner half of each wedge (innerR → midR) = AM fill
+- Outer half (midR → outerR) = PM fill
+- Ring strokes at `rgba(245,241,232,0.28)` separating the radii
+- Soft pale core at center (size * 0.08)
+
+**Fill:**
+- Empty: subtle tint `oklch(... / 0.04)`
+- AM filled: `oklch(0.82 0.07 210)` cool blue, 0.85 opacity
+- PM filled: `oklch(0.86 0.09 78)` warm gold, 0.85 opacity
+- `highlight` prop glows the selected wedge with a drop shadow
+
+**In Compose:** build with `Canvas` + `drawArc` for the annular sectors. Save yourself pain: use `PathMeasure` to animate fills as a radial sweep from inner → outer on tap.
+
+---
+
+## Assets
+
+- **Icons:** inline SVGs throughout, no external icon font. Stroke-based, weight 1.4–1.5. Replace with Material Symbols (weight 300, filled off) or keep the custom SVGs — both are fine.
+- **Wave glyph (brand mark):** two hand-drawn stacked wavy lines, one warm one cool. Used in the top brandmark and notification icon. See `index.html` for the SVG.
+- **Mood illustrations (morning flow):** 4 tiny SVG illustrations (bright sun, cloudy sky, heavy rain, question mark) — regenerate or keep.
+- **Pebbles:** drawn as gradient-filled SVG circles with soft inner shadow, per kind. See `src/screens-progress.jsx`.
+- **No photography / no generated imagery** — the app is pure SVG + CSS.
+
+---
+
+## Accessibility
+
+- Minimum hit target: 44×44dp (bump the small "?" info buttons to 44dp in native)
+- Text contrast: greeting / body on device bg is ≥ 4.5:1. Muted text (55% alpha) is intentional for de-emphasis, use only on decorative/hint text, never on interactive controls.
+- Prefers-reduced-motion: in native, disable breathing circle scale + fade transitions.
+- Screen reader: mandala petals should be discrete buttons with labels like "Body, morning not filled, double tap to add entry".
+
+---
+
+## What's in `/prototype`
 
 ```
-props: { color, size = 28, dim = false, seed = 0 }
-colors: moon | sand | coral | deep | jade
+prototype/
+  index.html              — entry point, global fonts + colors + Babel imports
+  tweaks-panel.jsx        — floating tweaks UI (dev-only)
+  android-frame.jsx       — fake Android device chrome (dev-only — remove in native)
+  src/
+    app.jsx               — root, routing, state, palettes, notification scheduler
+    frame.jsx             — PTDevice (device chrome component)
+    ambient.jsx           — web-audio ambient-sound engine (→ replace with ExoPlayer)
+    mandala.jsx           — <SatirMandala/> — the 8-petal component
+    ui.jsx                — shared primitives (chips, cards, buttons, icons)
+    notifications.jsx     — NotifToast
+    screens-home.jsx
+    screens-habits.jsx
+    screens-mandala.jsx
+    screens-morning.jsx   — morning + evening flows
+    screens-breath.jsx
+    screens-focus.jsx
+    screens-break.jsx
+    screens-progress.jsx  — Garden tab
+    screens-settings.jsx
 ```
 
-Each color is a 3-stop palette (a = highlight, b = mid, c = shadow). Body shape is a fancy border-radius `50% 48% 52% 50% / 50% 52% 48% 50%` to look organic. Pseudo-random seed drives aspect ratio (0.82–0.96), tilt (±18°), and highlight position (26–44% × 22–36%). Speckles (2 dots) appear at ≥20px.
-
-See `src/ui.jsx` for the exact styling.
-
-### SatirMandala
-
-Custom SVG with:
-- 8 petals in a ring (45° slice each, 1.2° padding)
-- Each petal has two bands: AM (inner) and PM (outer), fill = `resources[key].am` and `.pm`
-- Decorative: 16-ray star, 2 upward + 2 downward rotated triangles (Satir's "self" geometry), outer dashed ring
-- Animated core circle with `breathe` pulse
-- Props: `size, resources, highlight (key), onPetalTap, showLabels, complexity (simple|full), animate`
-
-See `src/mandala.jsx`. Port this carefully — the geometry is the signature of the whole app.
-
-### NotifToast (Android-style notification)
-
-Slides in from top, translucent white rounded rect, app icon tile (mandala glyph), small app-name/time eyebrow, serif body "It's time for [habit] in the garden", close ×. Tap-through opens Habits screen.
-
-### HabitRow
-
-Row with toggle stone, label, hint + bell+time chip, streak pill, bell button (toggles inline reminder editor), optional remove ×. Expanded state reveals native `<input type="time">` with dark colorScheme.
+**Exact values that aren't in this README** — pull from source. Grep tips:
+- Palettes: `PALETTES` in `app.jsx`
+- Initial state / demo data: `INITIAL_STATE` in `app.jsx`
+- Mandala geometry: `mandala.jsx` top
+- Typography utilities: `index.html` `.serif / .ui / .mono / .theme-*` rules
 
 ---
 
-## State shape
+## Open questions for product
 
-```js
-{
-  name: string,
-  morningDone: bool, eveningDone: bool,
-  goodThing: string, intent: string, morningMood: string,
+A few things the designer and user haven't fully locked — flag these with your PM:
 
-  habits: [{ id, label, hint, done, streak, remindAt: "HH:mm" | "" }],
-  weeklyHabits: [{ id, label, hint, day: 0-6, done, streak, remindAt }],
-
-  resources: {                         // 8 Satir keys
-    physical: { am: 0-1, pm: 0-1 },
-    intellectual: {...}, emotional: {...}, sensory: {...},
-    interactional: {...}, nutritional: {...}, contextual: {...}, spiritual: {...},
-  },
-
-  mandalaEntries: {
-    [resourceKey]: {
-      am: { resource: string, challenge: string },
-      pm: { resource: string, challenge: string },
-    }
-  },
-
-  stones: [{ kind: 'moon'|'jade'|'sand'|'coral'|'deep', label, when }],
-
-  sound: bool, font: string, complexity: 'simple'|'full',
-}
-```
-
-### Resource↔habit/action mapping
-
-When a habit toggles on, its action maps to a Satir resource petal (adds ~0.15 fill to `.pm`). Mapping:
-
-| Habit / action       | Resource          |
-|----------------------|-------------------|
-| no-phone, deep-clean | `contextual`      |
-| workout, long-walk, sleep | `physical`  |
-| break (generic)      | `sensory`         |
-| eat, water, meal-prep| `nutritional`     |
-| gratitude, therapy   | `emotional`       |
-| call-mom, date-night | `interactional`   |
-| read                 | `intellectual`    |
-| morning flow         | `intellectual` + `moon` pebble |
-| evening flow         | `spiritual` + `sand` pebble    |
-| breath session       | `emotional` + `moon` pebble    |
-| focus session        | `physical` + `intellectual` + `deep` pebble |
-| each break (varies)  | its mapped resource + `jade` pebble |
-
----
-
-## Reminders / notifications
-
-Each habit has an optional `remindAt: "HH:mm"`. The app should schedule a local notification for that time each day. Notification copy template:
-
-> **Perfectly Tranquillo** · HH:mm
-> *It's time for [habit label] in the garden*
-
-Tapping the notification deep-links to the **Habits** screen (and scrolls to the specific habit — enhancement; not in current prototype). Use Android's `NotificationManager` + `AlarmManager` (or `WorkManager` for daily repeats).
-
-Weekly habits should only fire on their configured `day` of the week.
-
----
-
-## Tweaks (design-time toggles, not shipped UX)
-
-The floating Tweaks panel in the prototype is a designer/reviewer tool only. **Do not ship it.** The settings that matter to production are: Font pairing, Sound on/off, Habits add/remove — all of which live in the Settings screen.
-
----
-
-## Files in this handoff
-
-**`/prototype`** — the full interactive HTML prototype (open `index.html`)
-- `index.html` — loads fonts, CSS tokens, boots React+Babel, wires scripts
-- `android-frame.jsx` — device bezel (from starter)
-- `tweaks-panel.jsx` — tweak panel starter (design-time only, don't ship)
-- `src/app.jsx` — root, state, routing, tweaks, ambient music, demo notif timer
-- `src/ui.jsx` — **shared UI: Stone (sea pebble), TabBar, Card, PrimaryBtn, ProgressRing, ScreenHeader, icons**
-- `src/mandala.jsx` — **SatirMandala + MiniMandala + SATIR_RESOURCES constant**
-- `src/frame.jsx` — PTDevice (custom device chrome) + MusicButton
-- `src/ambient.jsx` — WebAudio ocean loop (can skip in prod or use a real asset)
-- `src/notifications.jsx` — **NotifToast** (Android notification visual)
-- `src/screens-home.jsx` — Home screen
-- `src/screens-habits.jsx` — **Habits: DailyView, WeeklyView, HabitRow with time-picker**
-- `src/screens-mandala.jsx` — **Mandala tab: MandalaTappable, PetalSheet, FieldBlock, per-resource placeholders**
-- `src/screens-morning.jsx` — Morning intention flow
-- `src/screens-breath.jsx` — Box breathing
-- `src/screens-focus.jsx` — Focus timer
-- `src/screens-break.jsx` — **Take a break: 19 breaks, filters, Surprise me**
-- `src/screens-progress.jsx` — Garden / progress
-- `src/screens-settings.jsx` — Settings + Evening reflection
-
----
-
-## Implementation notes for Claude Code
-
-1. **Start with the mandala**. It's the app's DNA. Port `SatirMandala` first to Jetpack Compose Canvas / SwiftUI Canvas / RN-Skia. Get the geometry right before anything else.
-2. **Next: sea-pebble Stone**. Reusable. Used everywhere. Layered radial gradients on an organic oval, small random variance per seed.
-3. **State is simple** — a single source of truth is fine (ViewModel / Redux / Zustand / whatever the codebase uses). Persist to local storage.
-4. **Notifications need real platform scheduling** (AlarmManager/WorkManager on Android). The prototype's `setTimeout` is just a demo.
-5. **The Tweaks panel is design-only** — don't ship it. Port the Settings screen's font/sound/habits controls instead.
-6. **Fonts**: Fraunces is the signature. If unavailable, fall back to a contrast-y transitional italic serif; do not substitute Inter/system.
-7. **No AI**. This was an explicit product constraint from the user — the category is crowded with AI-chat wellness apps and the user doesn't want that.
+1. **Light mode.** The prototype is dark-only. A daylight palette (bright sky-blue + pale sand + slate ink) was sketched but not built — see `Palette Study Daytime.html` for early direction. If light mode ships, every card/text style needs a second variant.
+2. **Habit reminders.** Per-habit `remindAt` is defined but only the notification UI is built — no scheduler. Android: `AlarmManager` + `NotificationCompat`.
+3. **Weekly habits rollover.** When does a weekly habit's "done" reset? End of the day, or end of the week? Prototype resets at midnight same as dailies — probably wrong.
+4. **Streak truncation.** No rule yet for missed days breaking a streak — currently streaks only go up in prototype.
+5. **Pebble-awarding logic.** Garden shows pebbles but award rules aren't codified. Suggested: 1 pebble per completed AM mandala entry, 1 per PM, 1 per daily-habit completion. Kinds randomized within a soft palette.
