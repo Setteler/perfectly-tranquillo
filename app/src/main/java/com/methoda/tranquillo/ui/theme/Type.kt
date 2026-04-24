@@ -2,6 +2,7 @@ package com.methoda.tranquillo.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font as ResFont
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -19,10 +20,11 @@ private val fontProvider = GoogleFont.Provider(
 
 // --- Font families -------------------------------------------------------
 
-// New default display font (handwritten casual)
+// Default display font — bundled as a local resource so it always renders
+// even when the Google Fonts provider is slow / unreachable on emulators.
 private val Caveat = FontFamily(
-    Font(googleFont = GoogleFont("Caveat"), fontProvider = fontProvider, weight = FontWeight.Normal),
-    Font(googleFont = GoogleFont("Caveat"), fontProvider = fontProvider, weight = FontWeight.Medium)
+    ResFont(R.font.caveat, FontWeight.Normal),
+    ResFont(R.font.caveat, FontWeight.Medium)
 )
 
 // New default body font
