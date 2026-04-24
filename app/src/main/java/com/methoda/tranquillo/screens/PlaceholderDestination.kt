@@ -1,4 +1,4 @@
-package com.methoda.tranquillo.ui.placeholder
+package com.methoda.tranquillo.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,13 +14,14 @@ import androidx.compose.ui.unit.dp
 import com.methoda.tranquillo.ui.theme.Dimens
 
 /**
- * Plain placeholder used for tabs that haven't been built yet (Habits, Garden, Settings).
- * The proof-of-components preview from #1 was removed once real screens shipped in #2.
+ * Tighter placeholder used for Home's quick-action routes (Morning, Evening, Breath,
+ * Focus, Break). Same shape as the main tab PlaceholderScreen but friendlier copy
+ * tailored to each action.
  */
 @Composable
-fun PlaceholderScreen(
-    title: String,
+fun PlaceholderDestination(
     eyebrow: String,
+    title: String,
     subprojectNumber: Int,
     modifier: Modifier = Modifier
 ) {

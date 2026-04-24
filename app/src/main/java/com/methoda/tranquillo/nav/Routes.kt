@@ -13,6 +13,13 @@ sealed class Route(val path: String) {
     data object Mandala : Route("mandala")
     data object Garden : Route("garden")
     data object Settings : Route("settings")
+
+    // Quick-action destinations (all placeholder through #4)
+    data object Morning : Route("morning")
+    data object Evening : Route("evening")
+    data object Breath  : Route("breath")
+    data object Focus   : Route("focus")
+    data object Break   : Route("break")
 }
 
 data class TabDestination(

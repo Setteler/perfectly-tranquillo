@@ -18,13 +18,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.methoda.tranquillo.data.AppViewModel
+import com.methoda.tranquillo.screens.PlaceholderDestination
+import com.methoda.tranquillo.screens.home.HomeScreen
+import com.methoda.tranquillo.screens.mandala.MandalaScreen
 import com.methoda.tranquillo.ui.chrome.BottomTabBar
 import com.methoda.tranquillo.ui.chrome.SeaBackground
 import com.methoda.tranquillo.ui.placeholder.PlaceholderScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RootNavHost() {
+fun RootNavHost(
+    viewModel: AppViewModel
+) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
@@ -67,10 +73,9 @@ fun RootNavHost() {
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(Route.Home.path) {
-                    PlaceholderScreen(
-                        title = "Home",
-                        eyebrow = "today's mandala",
-                        subprojectNumber = 2
+                    HomeScreen(
+                        viewModel = viewModel,
+                        onActionClick = { route -> navController.navigate(route) }
                     )
                 }
                 composable(Route.Habits.path) {
@@ -81,11 +86,7 @@ fun RootNavHost() {
                     )
                 }
                 composable(Route.Mandala.path) {
-                    PlaceholderScreen(
-                        title = "Mandala",
-                        eyebrow = "your inner landscape",
-                        subprojectNumber = 2
-                    )
+                    MandalaScreen(viewModel = viewModel)
                 }
                 composable(Route.Garden.path) {
                     PlaceholderScreen(
@@ -99,6 +100,42 @@ fun RootNavHost() {
                         title = "Settings",
                         eyebrow = "tune the sea",
                         subprojectNumber = 7
+                    )
+                }
+                // Quick-action placeholders
+                composable(Route.Morning.path) {
+                    PlaceholderDestination(
+                        eyebrow = "your morning",
+                        title = "morning reflection",
+                        subprojectNumber = 4
+                    )
+                }
+                composable(Route.Evening.path) {
+                    PlaceholderDestination(
+                        eyebrow = "your evening",
+                        title = "evening reflection",
+                        subprojectNumber = 4
+                    )
+                }
+                composable(Route.Breath.path) {
+                    PlaceholderDestination(
+                        eyebrow = "a few slow breaths",
+                        title = "box breathing",
+                        subprojectNumber = 4
+                    )
+                }
+                composable(Route.Focus.path) {
+                    PlaceholderDestination(
+                        eyebrow = "twenty-five quiet minutes",
+                        title = "focus",
+                        subprojectNumber = 4
+                    )
+                }
+                composable(Route.Break.path) {
+                    PlaceholderDestination(
+                        eyebrow = "sixty gentle seconds",
+                        title = "take a break",
+                        subprojectNumber = 4
                     )
                 }
             }

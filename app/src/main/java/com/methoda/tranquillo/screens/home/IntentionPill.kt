@@ -1,0 +1,70 @@
+package com.methoda.tranquillo.screens.home
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import com.methoda.tranquillo.ui.theme.Sand
+
+/**
+ * Full-round outlined pill, warm-gold, showing the current intention.
+ * When intent is blank we render a hint and a muted dot.
+ */
+@Composable
+fun IntentionPill(
+    intent: String,
+    modifier: Modifier = Modifier,
+    hint: String = "set a gentle intention"
+) {
+    val isEmpty = intent.isBlank()
+    val accent = Sand
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(100.dp),
+        color = accent.copy(alpha = 0.10f),
+        border = BorderStroke(1.dp, accent.copy(alpha = if (isEmpty) 0.18f else 0.30f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = if (isEmpty) 0.40f else 0.90f))
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "INTENTION",
+                style = MaterialTheme.typography.labelSmall,
+                color = accent.copy(alpha = 0.85f)
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = if (isEmpty) hint else intent,
+                style = MaterialTheme.typography.displaySmall,
+                color = if (isEmpty) MaterialTheme.colorScheme.onSurfaceVariant
+                        else MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
