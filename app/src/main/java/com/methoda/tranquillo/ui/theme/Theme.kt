@@ -10,11 +10,13 @@ private val SeaColorScheme = darkColorScheme(
     tertiary = Coral,
     background = Ink,
     surface = Ink2,
+    surfaceVariant = Ink3,
     onPrimary = Ink,
     onSecondary = Ink,
     onTertiary = Ink,
     onBackground = Foam,
-    onSurface = Foam
+    onSurface = Foam,
+    onSurfaceVariant = Mist
 )
 
 @Composable
@@ -23,6 +25,8 @@ fun PerfectlyTranquilloTheme(
 ) {
     MaterialTheme(
         colorScheme = SeaColorScheme,
+        typography = PerfectlyTranquilloTypography,
+        shapes = PerfectlyTranquilloShapes,
         content = content
     )
 }
