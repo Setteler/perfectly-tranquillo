@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Perfectly Tranquillo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=JetBrains+Mono:wght@300;400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Caveat:wght@400;500&family=Quicksand:wght@300;400;500;600&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root {
+    /* whimsical ocean palette — softer, dreamier */
+    --ink:       oklch(0.28 0.06 230);
+    --ink-2:     oklch(0.34 0.07 225);
+    --ink-3:     oklch(0.42 0.08 220);
+    --deep:      oklch(0.5 0.09 220);
+    --sea:       oklch(0.65 0.10 215);
+    --sky:       oklch(0.82 0.09 210);
+    --foam:      oklch(0.95 0.03 200);
+    --mist:      oklch(0.97 0.02 210);
+    --sand:      oklch(0.88 0.07 85);
+    --sand-2:    oklch(0.82 0.09 75);
+    --stone:     oklch(0.78 0.06 70);
+    --coral:     oklch(0.78 0.10 40);
+    --shell:     oklch(0.92 0.05 60);
+    --line:      color-mix(in oklch, var(--foam), transparent 80%);
+    --line-2:    color-mix(in oklch, var(--foam), transparent 88%);
+  }
+  html, body {
+    margin: 0; padding: 0;
+    background:
+      radial-gradient(ellipse at 85% 95%, oklch(0.82 0.08 80 / 0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 10% 10%, oklch(0.68 0.10 210) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 30%, oklch(0.55 0.12 215) 0%, transparent 55%),
+      linear-gradient(180deg, oklch(0.4 0.09 220) 0%, oklch(0.28 0.07 225) 50%, oklch(0.22 0.06 230) 100%);
+    min-height: 100vh;
+    color: var(--foam);
+    font-family: 'Quicksand', system-ui, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  #root { min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* scrollbar tweak */
+  .scroll::-webkit-scrollbar { width: 0; height: 0; }
+
+  /* utilities — DEFAULT is now soft/whimsical: Fraunces + Quicksand */
+  .serif { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; letter-spacing: -0.005em; }
+  .mono  { font-family: 'JetBrains Mono', monospace; }
+  .ui    { font-family: 'Quicksand', system-ui, sans-serif; font-weight: 500; }
+
+  /* More serious editorial */
+  .theme-instrument .serif { font-family: 'Instrument Serif', serif; font-style: normal; font-weight: 400; }
+  .theme-instrument .ui    { font-family: 'Inter', system-ui, sans-serif; font-weight: 500; }
+
+  /* Even more whimsical — Caveat handwritten + Nunito */
+  .theme-caveat .serif { font-family: 'Caveat', cursive; font-style: normal; font-weight: 500; letter-spacing: 0; }
+  .theme-caveat .ui    { font-family: 'Nunito', system-ui, sans-serif; font-weight: 500; }
+
+  .theme-cormorant .serif { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 300; }
+  .theme-cormorant .ui    { font-family: 'Inter', system-ui, sans-serif; }
+
+  button { font-family: inherit; color: inherit; }
+
+  /* subtle constellations bg for device content */
+  .stars {
+    position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background-image:
+      radial-gradient(1px 1px at 20% 18%, rgba(255,255,255,0.6), transparent 60%),
+      radial-gradient(1px 1px at 72% 28%, rgba(255,255,255,0.4), transparent 60%),
+      radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(1px 1px at 88% 82%, rgba(255,255,255,0.35), transparent 60%),
+      radial-gradient(1px 1px at 12% 60%, rgba(255,255,255,0.3), transparent 60%),
+      radial-gradient(1px 1px at 62% 92%, rgba(255,255,255,0.4), transparent 60%);
+  }
+
+  @keyframes float-slow { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  @keyframes fade-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes shimmer { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
+  @keyframes rotate-slow { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+  .fade-in { animation: fade-in 0.5s ease-out both; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="src/frame.jsx"></script>
+<script type="text/babel" src="src/ambient.jsx"></script>
+<script type="text/babel" src="src/mandala.jsx"></script>
+<script type="text/babel" src="src/ui.jsx"></script>
+<script type="text/babel" src="src/screens-morning.jsx"></script>
+<script type="text/babel" src="src/screens-home.jsx"></script>
+<script type="text/babel" src="src/screens-habits.jsx"></script>
+<script type="text/babel" src="src/screens-mandala.jsx"></script>
+<script type="text/babel" src="src/screens-breath.jsx"></script>
+<script type="text/babel" src="src/screens-focus.jsx"></script>
+<script type="text/babel" src="src/screens-break.jsx"></script>
+<script type="text/babel" src="src/screens-progress.jsx"></script>
+<script type="text/babel" src="src/screens-settings.jsx"></script>
+<script type="text/babel" src="src/notifications.jsx"></script>
+<script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>

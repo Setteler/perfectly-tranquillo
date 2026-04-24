@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.methoda.yogaapp"
+    namespace = "com.methoda.tranquillo"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.methoda.yogaapp"
+        applicationId = "com.methoda.tranquillo"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

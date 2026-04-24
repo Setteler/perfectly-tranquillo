@@ -1,4 +1,4 @@
-package com.methoda.yogaapp
+package com.methoda.tranquillo
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,20 +12,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.methoda.yogaapp.ui.theme.YogaAppTheme
+import com.methoda.tranquillo.ui.theme.PerfectlyTranquilloTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            YogaAppTheme {
+            PerfectlyTranquilloTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Scaffold { innerPadding ->
                         Greeting(
-                            name = "Yoga",
+                            name = "Perfectly Tranquillo",
                             modifier = Modifier.padding(innerPadding)
                         )
                     }
@@ -46,7 +46,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
-    YogaAppTheme {
-        Greeting("Yoga")
+    PerfectlyTranquilloTheme {
+        Greeting("Perfectly Tranquillo")
     }
 }
