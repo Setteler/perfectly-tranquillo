@@ -52,6 +52,7 @@ fun HomeScreen(
 ) {
     val today by viewModel.today.collectAsState()
     val userName by viewModel.userName.collectAsState()
+    val daily by viewModel.dailyHabits.collectAsState()
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val greeting = when {
@@ -122,9 +123,9 @@ fun HomeScreen(
             SnapshotRow(
                 petalsFilled = petalsFilled,
                 petalsTotal = 16,
-                habitsDone = 0,
-                habitsTotal = 0,
-                streakDays = 0
+                habitsDone = daily.count { it.done },
+                habitsTotal = daily.size,
+                streakDays = daily.maxOfOrNull { it.streak } ?: 0
             )
         }
 

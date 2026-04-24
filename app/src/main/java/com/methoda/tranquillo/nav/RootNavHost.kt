@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.screens.PlaceholderDestination
+import com.methoda.tranquillo.screens.habits.HabitsScreen
 import com.methoda.tranquillo.screens.home.HomeScreen
 import com.methoda.tranquillo.screens.mandala.MandalaScreen
 import com.methoda.tranquillo.ui.chrome.BottomTabBar
@@ -79,11 +80,7 @@ fun RootNavHost(
                     )
                 }
                 composable(Route.Habits.path) {
-                    PlaceholderScreen(
-                        title = "Habits",
-                        eyebrow = "small things, often",
-                        subprojectNumber = 3
-                    )
+                    HabitsScreen(viewModel = viewModel)
                 }
                 composable(Route.Mandala.path) {
                     MandalaScreen(viewModel = viewModel)
