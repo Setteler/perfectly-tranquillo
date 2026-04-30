@@ -24,6 +24,7 @@ import com.methoda.tranquillo.screens.actions.BreathScreen
 import com.methoda.tranquillo.screens.actions.EveningScreen
 import com.methoda.tranquillo.screens.actions.FocusScreen
 import com.methoda.tranquillo.screens.actions.MorningScreen
+import com.methoda.tranquillo.screens.garden.GardenScreen
 import com.methoda.tranquillo.screens.habits.HabitsScreen
 import com.methoda.tranquillo.screens.home.HomeScreen
 import com.methoda.tranquillo.screens.mandala.MandalaScreen
@@ -90,11 +91,7 @@ fun RootNavHost(
                     MandalaScreen(viewModel = viewModel)
                 }
                 composable(Route.Garden.path) {
-                    PlaceholderScreen(
-                        title = "Garden",
-                        eyebrow = "seven days of stones",
-                        subprojectNumber = 5
-                    )
+                    GardenScreen(viewModel = viewModel)
                 }
                 composable(Route.Settings.path) {
                     PlaceholderScreen(
