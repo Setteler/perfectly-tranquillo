@@ -15,6 +15,7 @@ import com.methoda.tranquillo.MainActivity
 import com.methoda.tranquillo.PerfectlyTranquilloApp
 import com.methoda.tranquillo.R
 import com.methoda.tranquillo.data.HabitsRepository
+import com.methoda.tranquillo.data.PrefsStore
 
 /**
  * Posts a habit-reminder notification when fired by WorkManager. Skips the
@@ -48,6 +49,7 @@ class HabitReminderWorker(
 
         if (doneToday) return Result.success()
         if (remindAt.isNullOrBlank()) return Result.success()
+        if (app.prefs.notifModeNow() == PrefsStore.NOTIF_SILENT) return Result.success()
 
         postNotification(applicationContext, habitId, label, hint)
         return Result.success()

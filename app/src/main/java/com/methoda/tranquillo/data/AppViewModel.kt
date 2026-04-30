@@ -68,6 +68,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_USER_NAME
     )
 
+    val palette: StateFlow<String> = app.prefs.palette.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_PALETTE
+    )
+
+    val notifMode: StateFlow<String> = app.prefs.notifMode.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_NOTIF_MODE
+    )
+
+    val soundEnabled: StateFlow<Boolean> = app.prefs.sound.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_SOUND
+    )
+
     private val todayDate: String get() = isoToday()
 
     /**
@@ -194,6 +206,56 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             if (isWeekly) habits.setWeeklyReminder(id, time)
             else          habits.setDailyReminder(id, time)
+        }
+    }
+
+    // ---- settings (#7) --------------------------------------------------
+
+    fun setUserName(name: String) {
+        viewModelScope.launch { app.prefs.setUserName(name.trim().ifEmpty { PrefsStore.DEFAULT_USER_NAME }) }
+    }
+
+    fun setPalette(id: String) {
+        viewModelScope.launch { app.prefs.setPalette(id) }
+    }
+
+    fun setNotifMode(mode: String) {
+        viewModelScope.launch { app.prefs.setNotifMode(mode) }
+    }
+
+    fun setSoundEnabled(enabled: Boolean) {
+        viewModelScope.launch { app.prefs.setSound(enabled) }
+    }
+
+    /** Reset today's mandala entries + habit fills + uncheck today's habits. */
+    fun resetToday() {
+        viewModelScope.launch {
+            val today = isoToday()
+            app.db.mandalaEntryDao().deleteAllForDate(today)
+            app.db.habitFillDao().deleteAllForDate(today)
+            app.db.habitDao().clearLastDoneIfDate(today)
+            app.db.weeklyHabitDao().clearLastDoneIfDate(today)
+            actionFills.value = emptyMap()
+            morningDone.value = false
+            eveningDone.value = false
+            morningMood.value = ""
+            intent.value = ""
+            goodThing.value = ""
+        }
+    }
+
+    /** Wipe all rows — mandala, habits, fills, stones. Keeps prefs. */
+    fun clearAll() {
+        viewModelScope.launch {
+            app.db.clearAllTables()
+            // Re-seed default habits so the user isn't stuck on an empty Habits screen.
+            HabitSeeder.seedAllIfEmpty(app.db)
+            actionFills.value = emptyMap()
+            morningDone.value = false
+            eveningDone.value = false
+            morningMood.value = ""
+            intent.value = ""
+            goodThing.value = ""
         }
     }
 

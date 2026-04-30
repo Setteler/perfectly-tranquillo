@@ -10,10 +10,13 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.ContextCompat
 import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.nav.RootNavHost
+import com.methoda.tranquillo.ui.theme.Palettes
 import com.methoda.tranquillo.ui.theme.PerfectlyTranquilloTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +34,9 @@ class MainActivity : ComponentActivity() {
         consumeDeepLink(intent)
         ensureNotificationPermission()
         setContent {
-            PerfectlyTranquilloTheme {
+            val paletteId by viewModel.palette.collectAsState()
+            val palette = Palettes.all.firstOrNull { it.id == paletteId } ?: Palettes.DeepTide
+            PerfectlyTranquilloTheme(palette = palette) {
                 RootNavHost(
                     viewModel = viewModel,
                     pendingDeepLinkRoute = pendingDeepLinkRoute

@@ -32,6 +32,7 @@ import com.methoda.tranquillo.screens.garden.GardenScreen
 import com.methoda.tranquillo.screens.habits.HabitsScreen
 import com.methoda.tranquillo.screens.home.HomeScreen
 import com.methoda.tranquillo.screens.mandala.MandalaScreen
+import com.methoda.tranquillo.screens.settings.SettingsScreen
 import com.methoda.tranquillo.ui.chrome.BottomTabBar
 import com.methoda.tranquillo.ui.chrome.SeaBackground
 import com.methoda.tranquillo.ui.placeholder.PlaceholderScreen
@@ -110,11 +111,7 @@ fun RootNavHost(
                     GardenScreen(viewModel = viewModel)
                 }
                 composable(Route.Settings.path) {
-                    PlaceholderScreen(
-                        title = "Settings",
-                        eyebrow = "tune the sea",
-                        subprojectNumber = 7
-                    )
+                    SettingsScreen(viewModel = viewModel)
                 }
                 // Quick-action real screens (#4)
                 composable(Route.Morning.path) {

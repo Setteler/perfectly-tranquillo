@@ -22,10 +22,10 @@ private val SeaColorScheme = darkColorScheme(
 
 @Composable
 fun PerfectlyTranquilloTheme(
+    palette: Palette = Palettes.DeepTide,
     content: @Composable () -> Unit
 ) {
-    // LocalPalette defaults to Deep Tide; palette switcher arrives in #7.
-    CompositionLocalProvider(LocalPalette provides Palettes.DeepTide) {
+    CompositionLocalProvider(LocalPalette provides palette) {
         MaterialTheme(
             colorScheme = SeaColorScheme,
             typography = PerfectlyTranquilloTypography,

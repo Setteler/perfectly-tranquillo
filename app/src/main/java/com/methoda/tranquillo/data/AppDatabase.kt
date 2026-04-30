@@ -67,6 +67,9 @@ interface MandalaEntryDao {
 
     @Query("SELECT * FROM mandala_entries WHERE date >= :startDate AND date <= :endDate")
     fun entriesInRange(startDate: String, endDate: String): Flow<List<MandalaEntryEntity>>
+
+    @Query("DELETE FROM mandala_entries WHERE date = :date")
+    suspend fun deleteAllForDate(date: String)
 }
 
 @Database(

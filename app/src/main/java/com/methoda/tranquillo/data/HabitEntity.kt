@@ -81,6 +81,9 @@ interface HabitDao {
     @Query("UPDATE habits SET remind_at = :time WHERE id = :id")
     suspend fun setRemindAt(id: String, time: String?)
 
+    @Query("UPDATE habits SET last_done_date = NULL WHERE last_done_date = :date")
+    suspend fun clearLastDoneIfDate(date: String)
+
     @Query("SELECT COUNT(*) FROM habits")
     suspend fun count(): Int
 }
@@ -111,6 +114,9 @@ interface WeeklyHabitDao {
     @Query("UPDATE weekly_habits SET remind_at = :time WHERE id = :id")
     suspend fun setRemindAt(id: String, time: String?)
 
+    @Query("UPDATE weekly_habits SET last_done_date = NULL WHERE last_done_date = :date")
+    suspend fun clearLastDoneIfDate(date: String)
+
     @Query("SELECT COUNT(*) FROM weekly_habits")
     suspend fun count(): Int
 }
@@ -122,6 +128,9 @@ interface HabitFillDao {
 
     @Query("DELETE FROM habit_fills WHERE date = :date AND habit_id = :habitId")
     suspend fun deleteForHabitOnDate(date: String, habitId: String)
+
+    @Query("DELETE FROM habit_fills WHERE date = :date")
+    suspend fun deleteAllForDate(date: String)
 
     @Query("SELECT * FROM habit_fills WHERE date = :date")
     fun fillsForDate(date: String): Flow<List<HabitFillEntity>>
