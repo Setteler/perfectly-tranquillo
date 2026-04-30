@@ -101,9 +101,12 @@ fun PaletteCard(
 }
 
 private fun paletteSubtitle(id: String): String = when (id) {
-    "deep_tide"   -> "warm sand on dark turquoise"
-    "tidepool"    -> "cleaned-up deep blue"
-    "sea_glass"   -> "twilight lagoon"
-    "kelp_forest" -> "deep teal with kelp"
-    else          -> ""
+    "deep_tide"    -> "warm sand on dark turquoise"
+    "tidepool"     -> "cleaned-up deep blue"
+    "sea_glass"    -> "twilight lagoon"
+    "kelp_forest"  -> "deep teal with kelp"
+    "moonlit_tide" -> "soft sky, full moon"
+    "lagoon_glow"  -> "turquoise under moonlight"
+    "stillwater"   -> "quiet blue, gentle glow"
+    else           -> ""
 }
