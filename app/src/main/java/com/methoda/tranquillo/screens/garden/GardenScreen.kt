@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,10 @@ import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.ui.components.ShellColor
 import com.methoda.tranquillo.ui.components.StoneKind
 import com.methoda.tranquillo.ui.theme.Dimens
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Garden / Progress screen — jar of seashells (one per ritual) + 7-day
@@ -44,11 +49,14 @@ fun GardenScreen(
 ) {
     val stones by viewModel.stones.collectAsState()
     val averages by viewModel.sevenDayAverages.collectAsState()
+    val weekFills by viewModel.weekFills.collectAsState()
+    val archive by viewModel.archiveEntries.collectAsState()
 
     val shells = stones.map { ShellInJar(color = it.toShellColor()) }
     val counts: Map<ShellColor, Int> =
         shells.groupingBy { it.color }.eachCount()
     val daysTending = stones.size
+    val todayIso = remember { isoToday() }
 
     Column(
         modifier = modifier
@@ -61,11 +69,20 @@ fun GardenScreen(
     ) {
         GardenHeader(daysTending = daysTending)
         Spacer(Modifier.height(14.dp))
+        WeekStripCard(fillsByDate = weekFills, todayIso = todayIso)
+        Spacer(Modifier.height(14.dp))
         ShellsCard(shells = shells, counts = counts)
         Spacer(Modifier.height(14.dp))
         ResourceAveragesCard(averages = averages)
+        Spacer(Modifier.height(14.dp))
+        ArchiveCard(entries = archive, todayIso = todayIso)
         Spacer(Modifier.height(Dimens.ScreenBottomClearance))
     }
+}
+
+private fun isoToday(): String {
+    val df = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }
+    return df.format(Date())
 }
 
 @Composable

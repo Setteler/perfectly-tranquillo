@@ -44,6 +44,24 @@ class MandalaRepository(private val dao: MandalaEntryDao) {
     ): Flow<Map<ResourceKey, Float>> =
         dao.entriesInRange(startDate, endDate).map { list -> buildAverages(list, days) }
 
+    /**
+     * Per-day fill maps over the inclusive range startDate..endDate. Returns
+     * date → resource map; dates with no entries are absent from the map
+     * (caller fills 0s).
+     */
+    fun fillsByDateInRange(
+        startDate: String,
+        endDate: String
+    ): Flow<Map<String, Map<ResourceKey, AmPmFill>>> =
+        dao.entriesInRange(startDate, endDate).map { list ->
+            list.groupBy { it.date }
+                .mapValues { (_, rows) -> buildFills(rows) }
+        }
+
+    /** Raw mandala entries between startDate and endDate. Used by the Garden archive. */
+    fun entriesInRange(startDate: String, endDate: String): Flow<List<MandalaEntryEntity>> =
+        dao.entriesInRange(startDate, endDate)
+
     suspend fun saveEntry(date: String, key: ResourceKey, phase: Phase, kind: String, text: String) {
         dao.upsertForKeyPhaseKind(date, key.name, phase.tag, kind, text)
     }

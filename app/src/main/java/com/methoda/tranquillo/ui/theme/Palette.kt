@@ -57,7 +57,37 @@ object Palettes {
         coolAccent = Color(0xFF1F706E).copy(alpha = 0.28f),
         waves = true
     )
-    val all = listOf(DeepTide, Tidepool, SeaGlass, KelpForest)
+
+    // Light palettes — coolAccent slot carries a warm cream "moon glow" overlay.
+    val MoonlitTide = Palette(
+        id = "moonlit_tide",
+        displayName = "Moonlit Tide",
+        baseTop = Color(0xFFB1C9E2),
+        baseMid = Color(0xFF94B8D4),
+        baseBot = Color(0xFF76A6C6),
+        warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.10f),
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f)
+    )
+    val LagoonGlow = Palette(
+        id = "lagoon_glow",
+        displayName = "Lagoon Glow",
+        baseTop = Color(0xFFB1D6E2),
+        baseMid = Color(0xFF94C8D4),
+        baseBot = Color(0xFF76BAC6),
+        warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.10f),
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f)
+    )
+    val Stillwater = Palette(
+        id = "stillwater",
+        displayName = "Stillwater",
+        baseTop = Color(0xFF99C2D6),
+        baseMid = Color(0xFF84AECD),
+        baseBot = Color(0xFF6F99C3),
+        warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.06f),
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.18f)
+    )
+
+    val all = listOf(DeepTide, Tidepool, SeaGlass, KelpForest, MoonlitTide, LagoonGlow, Stillwater)
 }
 
 val LocalPalette = staticCompositionLocalOf { Palettes.DeepTide }

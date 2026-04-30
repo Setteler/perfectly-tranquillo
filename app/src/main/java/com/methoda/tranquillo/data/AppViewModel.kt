@@ -90,6 +90,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repo.averageFillsInRange(isoDaysAgoOf(date, 6), date, days = 7)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
+    /** Per-day mandala fills for the last 7 days (today inclusive). Used by
+     *  the Garden week strip. Missing dates fall through as empty maps. */
+    val weekFills: StateFlow<Map<String, Map<ResourceKey, AmPmFill>>> =
+        currentDate.flatMapLatest { date ->
+            repo.fillsByDateInRange(isoDaysAgoOf(date, 6), date)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    /** Mandala entries from the last 30 days, newest first. Garden archive. */
+    val archiveEntries: StateFlow<List<MandalaEntryEntity>> =
+        currentDate.flatMapLatest { date ->
+            repo.entriesInRange(isoDaysAgoOf(date, 30), date)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /**
      * Today's mandala resources — entry-derived fills *plus* habit-fill bumps
      * (+0.15 per completed mapped habit), *plus* action-flow bumps (#4), all
