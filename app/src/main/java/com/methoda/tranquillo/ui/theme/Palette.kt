@@ -16,7 +16,9 @@ data class Palette(
     val baseBot: Color,
     val warmHighlight: Color,    // includes alpha
     val coolAccent: Color,        // includes alpha
-    val waves: Boolean = false
+    val waves: Boolean = false,
+    /** Light palette → use a dark-on-light color scheme; otherwise dark mode. */
+    val isLight: Boolean = false
 )
 
 object Palettes {
@@ -66,7 +68,8 @@ object Palettes {
         baseMid = Color(0xFF94B8D4),
         baseBot = Color(0xFF76A6C6),
         warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.10f),
-        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f)
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f),
+        isLight = true
     )
     val LagoonGlow = Palette(
         id = "lagoon_glow",
@@ -75,7 +78,8 @@ object Palettes {
         baseMid = Color(0xFF94C8D4),
         baseBot = Color(0xFF76BAC6),
         warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.10f),
-        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f)
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.30f),
+        isLight = true
     )
     val Stillwater = Palette(
         id = "stillwater",
@@ -84,7 +88,8 @@ object Palettes {
         baseMid = Color(0xFF84AECD),
         baseBot = Color(0xFF6F99C3),
         warmHighlight = Color(0xFFFFECC8).copy(alpha = 0.06f),
-        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.18f)
+        coolAccent = Color(0xFFFFECC8).copy(alpha = 0.18f),
+        isLight = true
     )
 
     val all = listOf(DeepTide, Tidepool, SeaGlass, KelpForest, MoonlitTide, LagoonGlow, Stillwater)

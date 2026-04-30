@@ -3,6 +3,7 @@ package com.methoda.tranquillo.nav
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,21 +68,39 @@ fun RootNavHost(
             modifier = Modifier.fillMaxSize(),
             containerColor = Color.Transparent,
             topBar = {
-                if (currentRoute in tabRoutes) {
-                    CenterAlignedTopAppBar(
-                        title = {},
-                        actions = {
-                            IconButton(onClick = { navController.navigate(Route.Settings.path) }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Settings,
-                                    contentDescription = "Settings"
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                            containerColor = Color.Transparent
+                when (currentRoute) {
+                    in tabRoutes -> {
+                        CenterAlignedTopAppBar(
+                            title = {},
+                            actions = {
+                                IconButton(onClick = { navController.navigate(Route.Settings.path) }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Settings,
+                                        contentDescription = "Settings"
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = Color.Transparent
+                            )
                         )
-                    )
+                    }
+                    Route.Settings.path -> {
+                        CenterAlignedTopAppBar(
+                            title = {},
+                            navigationIcon = {
+                                IconButton(onClick = { navController.popBackStack() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                                containerColor = Color.Transparent
+                            )
+                        )
+                    }
                 }
             },
             bottomBar = {
