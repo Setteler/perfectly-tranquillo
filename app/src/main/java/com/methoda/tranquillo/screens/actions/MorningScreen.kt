@@ -119,7 +119,7 @@ fun MorningScreen(
                         if (intent.isNotBlank()) viewModel.setIntent(intent.trim())
                         if (goodThing.isNotBlank()) viewModel.setGoodThing(goodThing.trim())
                         viewModel.setMorningDone(true)
-                        viewModel.addStone(StoneKind.Moon)
+                        viewModel.addStone(StoneKind.Moon, source = "morning")
                         viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Am, 0.4f)
                         onClose()
                     }

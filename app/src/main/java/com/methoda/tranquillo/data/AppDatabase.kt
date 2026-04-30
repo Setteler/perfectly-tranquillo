@@ -64,6 +64,9 @@ interface MandalaEntryDao {
 
     @Query("SELECT * FROM mandala_entries WHERE date = :date")
     fun entriesForDate(date: String): Flow<List<MandalaEntryEntity>>
+
+    @Query("SELECT * FROM mandala_entries WHERE date >= :startDate AND date <= :endDate")
+    fun entriesInRange(startDate: String, endDate: String): Flow<List<MandalaEntryEntity>>
 }
 
 @Database(
@@ -71,9 +74,10 @@ interface MandalaEntryDao {
         MandalaEntryEntity::class,
         HabitEntity::class,
         WeeklyHabitEntity::class,
-        HabitFillEntity::class
+        HabitFillEntity::class,
+        StoneEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -81,6 +85,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitDao(): HabitDao
     abstract fun weeklyHabitDao(): WeeklyHabitDao
     abstract fun habitFillDao(): HabitFillDao
+    abstract fun stoneDao(): StoneDao
 
     companion object {
         private const val DB_NAME = "perfectly_tranquillo.db"

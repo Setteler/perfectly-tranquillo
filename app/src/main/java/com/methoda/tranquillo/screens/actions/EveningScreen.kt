@@ -172,7 +172,7 @@ fun EveningScreen(
                 onClick = {
                     if (!doneAlready) {
                         viewModel.setEveningDone(true)
-                        viewModel.addStone(StoneKind.Sand)
+                        viewModel.addStone(StoneKind.Sand, source = "evening")
                         viewModel.addResourceFill(ResourceKey.Spiritual, Phase.Pm, 0.4f)
                     }
                     onClose()

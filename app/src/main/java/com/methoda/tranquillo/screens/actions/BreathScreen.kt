@@ -70,7 +70,7 @@ fun BreathScreen(
             if (elapsedSec >= totalSec) {
                 running = false
                 finished = true
-                viewModel.addStone(StoneKind.Moon)
+                viewModel.addStone(StoneKind.Moon, source = "breath")
                 viewModel.addResourceFill(ResourceKey.Emotional, Phase.Pm, 0.3f)
                 break
             }
@@ -226,7 +226,7 @@ fun BreathScreen(
                             text = "End",
                             onClick = {
                                 running = false
-                                viewModel.addStone(StoneKind.Moon)
+                                viewModel.addStone(StoneKind.Moon, source = "breath")
                                 viewModel.addResourceFill(ResourceKey.Emotional, Phase.Pm, 0.3f)
                                 onClose()
                             }

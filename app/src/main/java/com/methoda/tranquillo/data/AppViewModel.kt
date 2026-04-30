@@ -41,8 +41,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         weeklyHabitDao = app.db.weeklyHabitDao(),
         habitFillDao = app.db.habitFillDao()
     )
+    private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
 
-    // In-memory today pieces — persist in #5.
+    // In-memory today pieces.
     private val intent = MutableStateFlow("")
     private val goodThing = MutableStateFlow("")
     private val phaseOverride = MutableStateFlow<Phase?>(null)
@@ -50,9 +51,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val morningDone = MutableStateFlow(false)
     private val eveningDone = MutableStateFlow(false)
 
-    /** Stones collected this session — #5 persists to a Stones table. */
-    private val _stones = MutableStateFlow<List<StoneKind>>(emptyList())
-    val stones: StateFlow<List<StoneKind>> = _stones
+    /** Stones collected — persisted to Room (#5). */
+    val stones: StateFlow<List<StoneKind>> = stonesRepo.allStones
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** 7-day average fill per resource (rolling window, today inclusive). */
+    val sevenDayAverages: StateFlow<Map<ResourceKey, Float>> =
+        repo.averageFillsInRange(isoDaysAgo(6), isoToday(), days = 7)
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /** Additive per-resource fill bumps awarded by action screens (#4). */
     private val actionFills = MutableStateFlow<Map<Pair<ResourceKey, Phase>, Float>>(emptyMap())
@@ -139,9 +145,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     fun setMorningDone(done: Boolean) { morningDone.value = done }
     fun setEveningDone(done: Boolean) { eveningDone.value = done }
 
-    /** Append a stone to the in-session pouch (persistence in #5). */
-    fun addStone(kind: StoneKind) {
-        viewModelScope.launch { _stones.value = _stones.value + kind }
+    /** Append a stone — persisted via [StonesRepository]. */
+    fun addStone(kind: StoneKind, source: String = "") {
+        viewModelScope.launch { stonesRepo.addStone(kind, source) }
     }
 
     /**
@@ -195,6 +201,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             timeZone = TimeZone.getDefault()
         }
         fun isoToday(): String = DATE_FORMAT.format(Date())
+
+        /** ISO date for [n] days before today. n=0 → today; n=6 → 6 days ago. */
+        fun isoDaysAgo(n: Int): String {
+            val cal = Calendar.getInstance()
+            cal.add(Calendar.DAY_OF_YEAR, -n)
+            return DATE_FORMAT.format(cal.time)
+        }
 
         fun autoPhase(): Phase {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)

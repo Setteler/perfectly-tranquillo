@@ -105,7 +105,7 @@ fun BreakScreen(
     val finish: () -> Unit = {
         val c = chosen
         if (c != null) {
-            viewModel.addStone(StoneKind.Jade)
+            viewModel.addStone(StoneKind.Coral, source = "break")
             viewModel.addResourceFill(c.mappedResource, Phase.Pm, 0.22f)
         }
         onClose()

@@ -66,7 +66,7 @@ fun FocusScreen(
         if (remainingSec <= 0 && running) {
             running = false
             finished = true
-            viewModel.addStone(StoneKind.Deep)
+            viewModel.addStone(StoneKind.Deep, source = "focus")
             viewModel.addResourceFill(ResourceKey.Physical, Phase.Pm, 0.3f)
             viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Pm, 0.2f)
         }
@@ -200,7 +200,7 @@ fun FocusScreen(
                                 text = "End early",
                                 onClick = {
                                     running = false
-                                    viewModel.addStone(StoneKind.Deep)
+                                    viewModel.addStone(StoneKind.Deep, source = "focus")
                                     viewModel.addResourceFill(ResourceKey.Physical, Phase.Pm, 0.3f * progress.coerceAtLeast(0.4f))
                                     viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Pm, 0.2f * progress.coerceAtLeast(0.4f))
                                     onClose()

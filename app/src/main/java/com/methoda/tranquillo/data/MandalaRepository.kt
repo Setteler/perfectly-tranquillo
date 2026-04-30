@@ -32,6 +32,18 @@ class MandalaRepository(private val dao: MandalaEntryDao) {
     fun fillsForDate(date: String): Flow<Map<ResourceKey, AmPmFill>> =
         dao.entriesForDate(date).map { list -> buildFills(list) }
 
+    /**
+     * Average fill (AM and PM averaged together) per resource over the inclusive
+     * date range [startDate, endDate]. Days with no entry for a resource count
+     * as 0 in the denominator.
+     */
+    fun averageFillsInRange(
+        startDate: String,
+        endDate: String,
+        days: Int
+    ): Flow<Map<ResourceKey, Float>> =
+        dao.entriesInRange(startDate, endDate).map { list -> buildAverages(list, days) }
+
     suspend fun saveEntry(date: String, key: ResourceKey, phase: Phase, kind: String, text: String) {
         dao.upsertForKeyPhaseKind(date, key.name, phase.tag, kind, text)
     }
@@ -61,6 +73,28 @@ class MandalaRepository(private val dao: MandalaEntryDao) {
                 if (am > 0f || pm > 0f) {
                     out[k] = AmPmFill(am = am, pm = pm)
                 }
+            }
+            return out
+        }
+
+        /**
+         * Per-resource average over [days] (each resource's daily fill = (am+pm)/2).
+         * Days with no rows count as 0 — so the user's actual coverage shows up.
+         */
+        fun buildAverages(list: List<MandalaEntryEntity>, days: Int): Map<ResourceKey, Float> {
+            if (days <= 0) return emptyMap()
+            // Group by date → fills map.
+            val byDate: Map<String, Map<ResourceKey, AmPmFill>> = list
+                .groupBy { it.date }
+                .mapValues { (_, rows) -> buildFills(rows) }
+            val out = mutableMapOf<ResourceKey, Float>()
+            for (key in ResourceKey.orderedClockwise) {
+                var sum = 0f
+                for ((_, fills) in byDate) {
+                    val f = fills[key] ?: continue
+                    sum += (f.am + f.pm) / 2f
+                }
+                out[key] = (sum / days).coerceIn(0f, 1f)
             }
             return out
         }
