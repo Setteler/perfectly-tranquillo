@@ -53,10 +53,15 @@ fun MorningScreen(
     val quote = remember(dayOfYear) { MorningQuotes.forDayOfYear(dayOfYear) }
     val greeting = "Good morning, $name."
 
+    val closeAndMarkSeen: () -> Unit = {
+        viewModel.markMorningSeenToday()
+        onClose()
+    }
+
     ActionScaffold(
         eyebrow = "your morning",
         title = "Begin gently",
-        onClose = onClose,
+        onClose = closeAndMarkSeen,
         modifier = modifier
     ) {
         Column(
@@ -144,6 +149,7 @@ fun MorningScreen(
                         viewModel.addStone(StoneKind.Moon, source = "morning")
                         viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Am, 0.4f)
                     }
+                    viewModel.markMorningSeenToday()
                     onClose()
                 },
                 variant = if (revealed || doneAlready) PrimaryActionVariant.Sand

@@ -49,7 +49,6 @@ fun GardenScreen(
 ) {
     val stones by viewModel.stones.collectAsState()
     val averages by viewModel.sevenDayAverages.collectAsState()
-    val weekFills by viewModel.weekFills.collectAsState()
     val archive by viewModel.archiveEntries.collectAsState()
 
     val shells = stones.map { ShellInJar(color = it.toShellColor()) }
@@ -68,8 +67,6 @@ fun GardenScreen(
             )
     ) {
         GardenHeader(daysTending = daysTending)
-        Spacer(Modifier.height(14.dp))
-        WeekStripCard(fillsByDate = weekFills, todayIso = todayIso)
         Spacer(Modifier.height(14.dp))
         ShellsCard(shells = shells, counts = counts)
         Spacer(Modifier.height(14.dp))

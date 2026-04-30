@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.VolumeOff
+import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -14,9 +16,12 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
@@ -59,6 +64,21 @@ fun RootNavHost(
         pendingDeepLinkRoute.value = null
     }
 
+    // Morning gate — first time the app opens in morning hours and Morning
+    // hasn't been completed/dismissed today, route to the Morning screen
+    // before the user sees Home. Fires once per app launch.
+    var morningGateChecked by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (morningGateChecked) return@LaunchedEffect
+        morningGateChecked = true
+        // Wait until the gate flow has produced its real value (not the
+        // eager `false` default during VM construction).
+        kotlinx.coroutines.delay(50)
+        if (viewModel.shouldShowMorningGate.value) {
+            navController.navigate(Route.Morning.path)
+        }
+    }
+
     val tabRoutes = setOf(
         Route.Home.path, Route.Habits.path, Route.Mandala.path, Route.Garden.path, Route.TakeBreak.path
     )
@@ -70,8 +90,18 @@ fun RootNavHost(
             topBar = {
                 when (currentRoute) {
                     in tabRoutes -> {
+                        val sound by viewModel.soundEnabled.collectAsState()
                         CenterAlignedTopAppBar(
                             title = {},
+                            navigationIcon = {
+                                IconButton(onClick = { viewModel.setSoundEnabled(!sound) }) {
+                                    Icon(
+                                        imageVector = if (sound) Icons.Outlined.VolumeUp
+                                                      else Icons.Outlined.VolumeOff,
+                                        contentDescription = if (sound) "Sound on" else "Sound off"
+                                    )
+                                }
+                            },
                             actions = {
                                 IconButton(onClick = { navController.navigate(Route.Settings.path) }) {
                                     Icon(

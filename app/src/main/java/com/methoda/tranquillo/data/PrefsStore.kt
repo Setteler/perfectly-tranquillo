@@ -30,6 +30,13 @@ class PrefsStore(private val context: Context) {
     val notifMode: Flow<String> =
         context.dataStore.data.map { it[KEY_NOTIF_MODE] ?: DEFAULT_NOTIF_MODE }
 
+    /** ISO date the user last completed (or dismissed) the Morning gate. */
+    val morningDoneDate: Flow<String> =
+        context.dataStore.data.map { it[KEY_MORNING_DONE_DATE] ?: "" }
+
+    val ambientSound: Flow<String> =
+        context.dataStore.data.map { it[KEY_AMBIENT_SOUND] ?: DEFAULT_AMBIENT_SOUND }
+
     suspend fun setSound(enabled: Boolean) {
         context.dataStore.edit { it[KEY_SOUND] = enabled }
     }
@@ -50,6 +57,14 @@ class PrefsStore(private val context: Context) {
         context.dataStore.edit { it[KEY_NOTIF_MODE] = mode }
     }
 
+    suspend fun setMorningDoneDate(date: String) {
+        context.dataStore.edit { it[KEY_MORNING_DONE_DATE] = date }
+    }
+
+    suspend fun setAmbientSound(id: String) {
+        context.dataStore.edit { it[KEY_AMBIENT_SOUND] = id }
+    }
+
     /** Read [notifMode] eagerly off the datastore — used by Workers running outside the UI. */
     suspend fun notifModeNow(): String =
         context.dataStore.data.map { it[KEY_NOTIF_MODE] ?: DEFAULT_NOTIF_MODE }.first()
@@ -60,6 +75,7 @@ class PrefsStore(private val context: Context) {
         const val DEFAULT_USER_NAME = "friend"
         const val DEFAULT_PALETTE = "deep_tide"
         const val DEFAULT_NOTIF_MODE = "sound"
+        const val DEFAULT_AMBIENT_SOUND = "none"
 
         const val NOTIF_SILENT = "silent"
         const val NOTIF_SOUND = "sound"
@@ -70,5 +86,7 @@ class PrefsStore(private val context: Context) {
         private val KEY_USER_NAME = stringPreferencesKey("user_name")
         private val KEY_PALETTE = stringPreferencesKey("palette")
         private val KEY_NOTIF_MODE = stringPreferencesKey("notif_mode")
+        private val KEY_MORNING_DONE_DATE = stringPreferencesKey("morning_done_date")
+        private val KEY_AMBIENT_SOUND = stringPreferencesKey("ambient_sound")
     }
 }

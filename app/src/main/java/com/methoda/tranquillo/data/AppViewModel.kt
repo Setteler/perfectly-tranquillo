@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -80,6 +82,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_SOUND
     )
 
+    val ambientSound: StateFlow<String> = app.prefs.ambientSound.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_AMBIENT_SOUND
+    )
+
     val fontPair: StateFlow<String> = app.prefs.fontPair.stateIn(
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_FONT_PAIR
     )
@@ -87,6 +93,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** ISO date for the day the rest of the app considers "today". Bumped at
      *  midnight by the rollover coroutine in [init]. */
     private val currentDate = MutableStateFlow(isoToday())
+
+    /**
+     * Whether to gate-show the Morning screen on app open. True if the local
+     * hour is in the "morning" window (5..13) AND the user hasn't completed
+     * (or dismissed) Morning today. Persisted via [PrefsStore.morningDoneDate].
+     */
+    val shouldShowMorningGate: StateFlow<Boolean> =
+        currentDate.flatMapLatest { date ->
+            app.prefs.morningDoneDate.map { doneDate ->
+                val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                hour in MORNING_HOUR_START..MORNING_HOUR_END_INCLUSIVE && doneDate != date
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     /** 7-day average fill per resource (rolling window, today inclusive). */
     val sevenDayAverages: StateFlow<Map<ResourceKey, Float>> =
@@ -168,6 +187,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
+        // Restore morningDone (in-memory) from persisted morningDoneDate so that
+        // re-opening the app same-day after a process death doesn't re-prompt.
+        viewModelScope.launch {
+            val savedDate = app.prefs.morningDoneDate.first()
+            if (savedDate == currentDate.value) morningDone.value = true
+        }
         // Midnight rollover loop — when crossing 00:00 the in-memory layer
         // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
         // is cleared and `currentDate` advances so all date-keyed flows re-query.
@@ -294,6 +319,19 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.prefs.setSound(enabled) }
     }
 
+    fun setAmbientSound(id: String) {
+        viewModelScope.launch { app.prefs.setAmbientSound(id) }
+    }
+
+    /** Mark Morning seen for today (suppresses the gate). Called by both the
+     *  "Begin the day" button and the X dismiss. The button additionally
+     *  awards the Moon stone via the existing flow. */
+    fun markMorningSeenToday() {
+        viewModelScope.launch {
+            app.prefs.setMorningDoneDate(currentDate.value)
+        }
+    }
+
     fun setFontPair(id: String) {
         viewModelScope.launch { app.prefs.setFontPair(id) }
     }
@@ -335,6 +373,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             timeZone = TimeZone.getDefault()
         }
         fun isoToday(): String = DATE_FORMAT.format(Date())
+
+        /** Inclusive: morning window is 05:00..13:59 (matches autoPhase). */
+        const val MORNING_HOUR_START = 5
+        const val MORNING_HOUR_END_INCLUSIVE = 13
 
         /** ISO date for [n] days before today. n=0 → today; n=6 → 6 days ago. */
         fun isoDaysAgo(n: Int): String {

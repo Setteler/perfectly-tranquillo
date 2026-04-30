@@ -51,6 +51,7 @@ fun SettingsScreen(
     val paletteId by viewModel.palette.collectAsState()
     val notifMode by viewModel.notifMode.collectAsState()
     val sound by viewModel.soundEnabled.collectAsState()
+    val ambient by viewModel.ambientSound.collectAsState()
 
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearAllDialog by remember { mutableStateOf(false) }
@@ -115,10 +116,31 @@ fun SettingsScreen(
 
         SettingsSection(title = "Sound") {
             ToggleRow(
-                label = "Chime on tap",
-                hint = "soft bowl when you tick a habit (audio engine arrives later)",
+                label = "Ambient sound",
+                hint = "loops a calm background while the app is open",
                 checked = sound,
                 onChange = viewModel::setSoundEnabled
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "PICK A SOUND",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            for (option in AmbientOptions) {
+                AmbientRow(
+                    label = option.label,
+                    hint = option.hint,
+                    selected = ambient == option.id,
+                    onClick = { viewModel.setAmbientSound(option.id) }
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "audio plays once you've added the sound files (see project /res/raw)",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )
         }
         Spacer(Modifier.height(14.dp))
