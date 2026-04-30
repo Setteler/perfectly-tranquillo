@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Notification small-icon: two stacked sine waves, white-on-transparent.
+    Android tints this against the system bar, so any non-transparent pixel
+    must be solid white.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Lower wave -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M3,16
+                          C 6,13 8,19 12,16
+                          C 16,13 18,19 21,16" />
+
+    <!-- Upper wave -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="@android:color/transparent"
+        android:pathData="M3,9
+                          C 6,6 8,12 12,9
+                          C 16,6 18,12 21,9" />
+</vector>

@@ -4,11 +4,14 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.methoda.tranquillo.PerfectlyTranquilloApp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -32,17 +35,19 @@ data class TodayState(
     val eveningDone: Boolean = false
 )
 
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     private val app: PerfectlyTranquilloApp = application as PerfectlyTranquilloApp
     private val repo: MandalaRepository = MandalaRepository(app.db.mandalaEntryDao())
+    private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
     private val habits: HabitsRepository = HabitsRepository(
         habitDao = app.db.habitDao(),
         weeklyHabitDao = app.db.weeklyHabitDao(),
         habitFillDao = app.db.habitFillDao(),
+        stonesRepo = stonesRepo,
         reminderScheduler = app.reminderScheduler
     )
-    private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
 
     // In-memory today pieces.
     private val intent = MutableStateFlow("")
@@ -55,11 +60,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Stones collected — persisted to Room (#5). */
     val stones: StateFlow<List<StoneKind>> = stonesRepo.allStones
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    /** 7-day average fill per resource (rolling window, today inclusive). */
-    val sevenDayAverages: StateFlow<Map<ResourceKey, Float>> =
-        repo.averageFillsInRange(isoDaysAgo(6), isoToday(), days = 7)
-            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /** Additive per-resource fill bumps awarded by action screens (#4). */
     private val actionFills = MutableStateFlow<Map<Pair<ResourceKey, Phase>, Float>>(emptyMap())
@@ -80,27 +80,36 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_SOUND
     )
 
-    private val todayDate: String get() = isoToday()
+    /** ISO date for the day the rest of the app considers "today". Bumped at
+     *  midnight by the rollover coroutine in [init]. */
+    private val currentDate = MutableStateFlow(isoToday())
+
+    /** 7-day average fill per resource (rolling window, today inclusive). */
+    val sevenDayAverages: StateFlow<Map<ResourceKey, Float>> =
+        currentDate.flatMapLatest { date ->
+            repo.averageFillsInRange(isoDaysAgoOf(date, 6), date, days = 7)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
     /**
      * Today's mandala resources — entry-derived fills *plus* habit-fill bumps
      * (+0.15 per completed mapped habit), *plus* action-flow bumps (#4), all
      * capped at 1.0.
      */
-    val today: StateFlow<TodayState> = combine(
-        listOf(
-            repo.entryMapForDate(todayDate),
-            repo.fillsForDate(todayDate),
-            habits.fillTotalsForDate(todayDate),
-            intent,
-            goodThing,
-            phaseOverride,
-            actionFills,
-            morningMood,
-            morningDone,
-            eveningDone
-        )
-    ) { values ->
+    val today: StateFlow<TodayState> = currentDate.flatMapLatest { date ->
+        combine(
+            listOf(
+                repo.entryMapForDate(date),
+                repo.fillsForDate(date),
+                habits.fillTotalsForDate(date),
+                intent,
+                goodThing,
+                phaseOverride,
+                actionFills,
+                morningMood,
+                morningDone,
+                eveningDone
+            )
+        ) { values ->
         @Suppress("UNCHECKED_CAST")
         val entries = values[0] as Map<Pair<ResourceKey, Phase>, EntryPair>
         @Suppress("UNCHECKED_CAST")
@@ -118,23 +127,41 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         val merged = mergeResources(baseResources, habitBumps, actionBumps)
 
-        TodayState(
-            entries = entries,
-            resources = merged,
-            intent = intentText,
-            goodThing = goodThingText,
-            currentPhase = override ?: autoPhase(),
-            morningMood = moodText,
-            morningDone = mDone,
-            eveningDone = eDone
-        )
+            TodayState(
+                entries = entries,
+                resources = merged,
+                intent = intentText,
+                goodThing = goodThingText,
+                currentPhase = override ?: autoPhase(),
+                morningMood = moodText,
+                morningDone = mDone,
+                eveningDone = eDone
+            )
+        }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, TodayState())
 
     val dailyHabits: StateFlow<List<HabitUi>> =
-        habits.dailyHabitsUi().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        currentDate.flatMapLatest { date ->
+            habits.dailyHabitsUi(todayProvider = { date })
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val weeklyHabits: StateFlow<List<WeeklyHabitUi>> =
-        habits.weeklyHabitsUi().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+        currentDate.flatMapLatest { date ->
+            habits.weeklyHabitsUi(todayProvider = { date })
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    init {
+        // Midnight rollover loop — when crossing 00:00 the in-memory layer
+        // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
+        // is cleared and `currentDate` advances so all date-keyed flows re-query.
+        viewModelScope.launch {
+            while (isActive) {
+                delay(msUntilNextMidnight() + 1_000L)
+                currentDate.value = isoToday()
+                clearTodayInMemory()
+            }
+        }
+    }
 
     fun saveMandalaEntry(
         key: ResourceKey,
@@ -143,9 +170,32 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         challenge: String
     ) {
         viewModelScope.launch {
-            repo.saveEntry(todayDate, key, phase, "resource", resource.trim())
-            repo.saveEntry(todayDate, key, phase, "challenge", challenge.trim())
+            val date = currentDate.value
+            repo.saveEntry(date, key, phase, "resource", resource.trim())
+            repo.saveEntry(date, key, phase, "challenge", challenge.trim())
         }
+    }
+
+    private fun clearTodayInMemory() {
+        intent.value = ""
+        goodThing.value = ""
+        morningMood.value = ""
+        morningDone.value = false
+        eveningDone.value = false
+        actionFills.value = emptyMap()
+        phaseOverride.value = null
+    }
+
+    private fun msUntilNextMidnight(): Long {
+        val now = Calendar.getInstance()
+        val next = (now.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return (next.timeInMillis - now.timeInMillis).coerceAtLeast(1L)
     }
 
     fun setIntent(text: String) { intent.value = text }
@@ -230,17 +280,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Reset today's mandala entries + habit fills + uncheck today's habits. */
     fun resetToday() {
         viewModelScope.launch {
-            val today = isoToday()
+            val today = currentDate.value
             app.db.mandalaEntryDao().deleteAllForDate(today)
             app.db.habitFillDao().deleteAllForDate(today)
             app.db.habitDao().clearLastDoneIfDate(today)
             app.db.weeklyHabitDao().clearLastDoneIfDate(today)
-            actionFills.value = emptyMap()
-            morningDone.value = false
-            eveningDone.value = false
-            morningMood.value = ""
-            intent.value = ""
-            goodThing.value = ""
+            clearTodayInMemory()
         }
     }
 
@@ -250,12 +295,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             app.db.clearAllTables()
             // Re-seed default habits so the user isn't stuck on an empty Habits screen.
             HabitSeeder.seedAllIfEmpty(app.db)
-            actionFills.value = emptyMap()
-            morningDone.value = false
-            eveningDone.value = false
-            morningMood.value = ""
-            intent.value = ""
-            goodThing.value = ""
+            clearTodayInMemory()
         }
     }
 
@@ -278,6 +318,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         /** ISO date for [n] days before today. n=0 → today; n=6 → 6 days ago. */
         fun isoDaysAgo(n: Int): String {
             val cal = Calendar.getInstance()
+            cal.add(Calendar.DAY_OF_YEAR, -n)
+            return DATE_FORMAT.format(cal.time)
+        }
+
+        /** ISO date for [n] days before [base]. */
+        fun isoDaysAgoOf(base: String, n: Int): String {
+            val cal = Calendar.getInstance()
+            runCatching { cal.time = DATE_FORMAT.parse(base) ?: return@runCatching }
             cal.add(Calendar.DAY_OF_YEAR, -n)
             return DATE_FORMAT.format(cal.time)
         }

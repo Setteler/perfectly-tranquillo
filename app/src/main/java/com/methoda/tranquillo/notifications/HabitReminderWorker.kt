@@ -84,7 +84,8 @@ class HabitReminderWorker(
                 context,
                 NotificationChannelSetup.CHANNEL_HABIT_REMINDERS
             )
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_stat_tranquillo)
+                .setColor(0xFFA5C7DE.toInt())
                 .setContentTitle(label)
                 .setContentText(hint.ifBlank { "a small thing — when you're ready" })
                 .setStyle(NotificationCompat.BigTextStyle().bigText(

@@ -2,6 +2,7 @@ package com.methoda.tranquillo.data
 
 import com.methoda.tranquillo.notifications.HabitReminderScheduler
 import com.methoda.tranquillo.screens.habits.HabitMapping
+import com.methoda.tranquillo.ui.components.StoneKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
@@ -36,6 +37,7 @@ class HabitsRepository(
     private val habitDao: HabitDao,
     private val weeklyHabitDao: WeeklyHabitDao,
     private val habitFillDao: HabitFillDao,
+    private val stonesRepo: StonesRepository? = null,
     private val reminderScheduler: HabitReminderScheduler? = null
 ) {
 
@@ -86,7 +88,7 @@ class HabitsRepository(
     suspend fun toggleDaily(id: String, today: String = isoToday()) {
         val h = habitDao.findById(id) ?: return
         if (h.lastDoneDate == today) {
-            // Untoggle — undo today's completion.
+            // Untoggle — undo today's completion. Stone stays (committed).
             habitDao.setLastDone(id, null)
             val newStreak = (h.streak - 1).coerceAtLeast(0)
             habitDao.setStreak(id, newStreak)
@@ -108,6 +110,7 @@ class HabitsRepository(
                     )
                 )
             }
+            stonesRepo?.addStone(StoneKind.Jade, source = "habit")
         }
     }
 
@@ -135,6 +138,7 @@ class HabitsRepository(
                     )
                 )
             }
+            stonesRepo?.addStone(StoneKind.Jade, source = "habit")
         }
     }
 
