@@ -39,7 +39,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val habits: HabitsRepository = HabitsRepository(
         habitDao = app.db.habitDao(),
         weeklyHabitDao = app.db.weeklyHabitDao(),
-        habitFillDao = app.db.habitFillDao()
+        habitFillDao = app.db.habitFillDao(),
+        reminderScheduler = app.reminderScheduler
     )
     private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
 
@@ -194,6 +195,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             if (isWeekly) habits.setWeeklyReminder(id, time)
             else          habits.setDailyReminder(id, time)
         }
+    }
+
+    /** Fire a sample notification immediately (QA hook for #6 / #7 demo button). */
+    fun fireDemoReminder() {
+        com.methoda.tranquillo.notifications.HabitReminderWorker.postNotification(
+            context = app,
+            habitId = "demo",
+            label = "A small thing",
+            hint = "this is what a reminder feels like — gentle."
+        )
     }
 
     companion object {

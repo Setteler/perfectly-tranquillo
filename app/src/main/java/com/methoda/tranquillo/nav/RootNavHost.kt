@@ -11,7 +11,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.compose.NavHost
@@ -35,11 +39,23 @@ import com.methoda.tranquillo.ui.placeholder.PlaceholderScreen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootNavHost(
-    viewModel: AppViewModel
+    viewModel: AppViewModel,
+    pendingDeepLinkRoute: MutableState<String?> = remember { mutableStateOf(null) }
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+
+    val deepLink = pendingDeepLinkRoute.value
+    LaunchedEffect(deepLink) {
+        val target = deepLink ?: return@LaunchedEffect
+        navController.navigate(target) {
+            popUpTo(navController.graph.startDestinationId) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
+        pendingDeepLinkRoute.value = null
+    }
 
     val tabRoutes = setOf(
         Route.Home.path, Route.Habits.path, Route.Mandala.path, Route.Garden.path

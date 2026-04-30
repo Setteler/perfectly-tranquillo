@@ -1,5 +1,6 @@
 package com.methoda.tranquillo.data
 
+import com.methoda.tranquillo.notifications.HabitReminderScheduler
 import com.methoda.tranquillo.screens.habits.HabitMapping
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -34,7 +35,8 @@ data class WeeklyHabitUi(
 class HabitsRepository(
     private val habitDao: HabitDao,
     private val weeklyHabitDao: WeeklyHabitDao,
-    private val habitFillDao: HabitFillDao
+    private val habitFillDao: HabitFillDao,
+    private val reminderScheduler: HabitReminderScheduler? = null
 ) {
 
     fun dailyHabitsUi(todayProvider: () -> String = { isoToday() }): Flow<List<HabitUi>> =
@@ -173,21 +175,29 @@ class HabitsRepository(
 
     suspend fun removeDaily(id: String) {
         habitDao.delete(id)
-        // also clear any fill contribution for "today" so the mandala updates
         habitFillDao.deleteForHabitOnDate(isoToday(), id)
+        reminderScheduler?.cancel(id)
     }
 
     suspend fun removeWeekly(id: String) {
         weeklyHabitDao.delete(id)
         habitFillDao.deleteForHabitOnDate(isoToday(), id)
+        reminderScheduler?.cancel(id)
     }
 
     suspend fun setDailyReminder(id: String, time: String?) {
-        habitDao.setRemindAt(id, time?.ifBlank { null })
+        val cleaned = time?.ifBlank { null }
+        habitDao.setRemindAt(id, cleaned)
+        if (cleaned == null) reminderScheduler?.cancel(id)
+        else reminderScheduler?.scheduleDaily(id, cleaned)
     }
 
     suspend fun setWeeklyReminder(id: String, time: String?) {
-        weeklyHabitDao.setRemindAt(id, time?.ifBlank { null })
+        val cleaned = time?.ifBlank { null }
+        weeklyHabitDao.setRemindAt(id, cleaned)
+        val h = weeklyHabitDao.findById(id) ?: return
+        if (cleaned == null) reminderScheduler?.cancel(id)
+        else reminderScheduler?.scheduleWeekly(id, cleaned, h.dayOfWeek)
     }
 
     companion object {
