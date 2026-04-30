@@ -13,14 +13,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.methoda.tranquillo.ui.theme.Sand
-import com.methoda.tranquillo.ui.theme.Sky
 
 /**
  * 3 small glass pills showing today's numbers:
- * petals filled, habits done, streak days.
+ * petals filled, habits done, streak days. All numbers use theme onBackground
+ * so they read clearly on both dark and light palettes.
  */
 @Composable
 fun SnapshotRow(
@@ -38,19 +36,16 @@ fun SnapshotRow(
         Pill(
             value = "$petalsFilled/$petalsTotal",
             label = "petals",
-            accent = Sky,
             modifier = Modifier.weight(1f)
         )
         Pill(
             value = "$habitsDone/$habitsTotal",
             label = "habits",
-            accent = Color(0xFF86B097),
             modifier = Modifier.weight(1f)
         )
         Pill(
             value = "$streakDays",
             label = if (streakDays == 1) "day streak" else "day streak",
-            accent = Sand,
             modifier = Modifier.weight(1f)
         )
     }
@@ -60,7 +55,6 @@ fun SnapshotRow(
 private fun Pill(
     value: String,
     label: String,
-    accent: Color,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -78,7 +72,7 @@ private fun Pill(
             Text(
                 text = value,
                 style = MaterialTheme.typography.displaySmall,
-                color = accent
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = label,

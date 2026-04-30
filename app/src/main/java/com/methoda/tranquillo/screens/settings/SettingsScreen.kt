@@ -82,12 +82,6 @@ fun SettingsScreen(
                     )
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "More fonts coming soon",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
         }
         Spacer(Modifier.height(14.dp))
 

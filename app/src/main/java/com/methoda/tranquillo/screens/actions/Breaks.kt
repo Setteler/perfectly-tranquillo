@@ -23,7 +23,11 @@ data class BreakDef(
     val durationSec: Int,
     val mappedResource: ResourceKey,
     val prompt: String,
-    val stoneColor: StoneKind
+    val stoneColor: StoneKind,
+    /** If set, tapping this break navigates to the route instead of running
+     *  the inline countdown. Used to send "Five-minute breath" to the existing
+     *  box-breathing flow at Route.Breath. */
+    val redirectRoute: String? = null
 )
 
 /**
@@ -171,6 +175,32 @@ val Breaks: List<BreakDef> = listOf(
         title = "Do absolutely nothing", subtitle = "60 seconds of sky mind",
         durationSec = 60, mappedResource = ResourceKey.Spiritual,
         prompt = "No task. No plan. No phone. Just sit. Notice what arrives.",
+        stoneColor = StoneKind.Deep
+    ),
+
+    // Longer rests — added in v0.11
+    BreakDef(
+        id = "five-rest", kind = BreakKind.Body,
+        title = "Five-minute rest", subtitle = "5 min, eyes closed",
+        durationSec = 300, mappedResource = ResourceKey.Physical,
+        prompt = "Lie down or recline. Eyes closed. Soften your jaw, your forehead, your shoulders. " +
+                 "Nowhere to be for five minutes.",
+        stoneColor = StoneKind.Moon
+    ),
+    BreakDef(
+        id = "five-breath", kind = BreakKind.Body,
+        title = "Five-minute breath", subtitle = "box breathing 4·4·4·4",
+        durationSec = 300, mappedResource = ResourceKey.Emotional,
+        prompt = "Inhale 4, hold 4, exhale 4, hold 4. The animation will guide you.",
+        stoneColor = StoneKind.Jade,
+        redirectRoute = "breath"
+    ),
+    BreakDef(
+        id = "meditation", kind = BreakKind.Body,
+        title = "Quiet meditation", subtitle = "10 min, soft sit",
+        durationSec = 600, mappedResource = ResourceKey.Spiritual,
+        prompt = "Sit comfortably. Notice your breath without changing it. When the mind wanders, " +
+                 "kindly bring it back. Again. And again.",
         stoneColor = StoneKind.Deep
     )
 )

@@ -8,8 +8,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,10 +21,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -203,67 +206,72 @@ fun HabitRow(
                 )
             }
 
-            AnimatedVisibility(
-                visible = timePickerOpen,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Column {
-                    Spacer(Modifier.height(10.dp))
-                    TimePresetRow(
-                        current = remindAt,
-                        onPick = { picked ->
-                            onSetReminder(picked)
-                            timePickerOpen = false
-                        }
-                    )
-                }
-            }
         }
     }
-}
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TimePresetRow(
-    current: String?,
-    onPick: (String?) -> Unit
-) {
-    val presets = listOf("07:00", "09:00", "12:00", "18:00", "21:00")
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        presets.forEach { t ->
-            PresetChip(label = t, selected = current == t, onClick = { onPick(t) })
-        }
-        PresetChip(label = "clear", selected = false, onClick = { onPick(null) })
-    }
-}
-
-@Composable
-private fun PresetChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(100.dp),
-        color = if (selected) Sand.copy(alpha = 0.22f)
-        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-        border = BorderStroke(
-            1.dp,
-            if (selected) Sand.copy(alpha = 0.45f)
-            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-        ),
-        onClick = onClick
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = if (selected) Sand else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+    if (timePickerOpen) {
+        ReminderTimePickerDialog(
+            initial = remindAt,
+            onConfirm = {
+                onSetReminder(it)
+                timePickerOpen = false
+            },
+            onClear = {
+                onSetReminder(null)
+                timePickerOpen = false
+            },
+            onDismiss = { timePickerOpen = false }
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderTimePickerDialog(
+    initial: String?,
+    onConfirm: (String) -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    // Parse "HH:MM" or default to 09:00.
+    val (initHour, initMin) = remember(initial) {
+        val parts = initial?.split(":")
+        val h = parts?.getOrNull(0)?.toIntOrNull() ?: 9
+        val m = parts?.getOrNull(1)?.toIntOrNull() ?: 0
+        h to m
+    }
+    val state = rememberTimePickerState(
+        initialHour = initHour,
+        initialMinute = initMin,
+        is24Hour = true
+    )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Pick a reminder time",
+                style = MaterialTheme.typography.headlineMedium
+            )
+        },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TimePicker(state = state)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val h = state.hour.toString().padStart(2, '0')
+                val m = state.minute.toString().padStart(2, '0')
+                onConfirm("$h:$m")
+            }) { Text("Set") }
+        },
+        dismissButton = {
+            Row {
+                if (initial != null) {
+                    TextButton(onClick = onClear) { Text("Clear") }
+                }
+                TextButton(onClick = onDismiss) { Text("Cancel") }
+            }
+        }
+    )
 }

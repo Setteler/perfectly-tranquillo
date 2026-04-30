@@ -15,13 +15,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Air
 import androidx.compose.material.icons.outlined.Coffee
 import androidx.compose.material.icons.outlined.NightsStay
-import androidx.compose.material.icons.outlined.Park
 import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -53,6 +55,7 @@ fun HomeScreen(
     val today by viewModel.today.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val daily by viewModel.dailyHabits.collectAsState()
+    var showIntentionDialog by remember { mutableStateOf(false) }
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
     val greeting = when {
@@ -69,12 +72,14 @@ fun HomeScreen(
         c
     }
 
+    // Quick actions share a single accent so the grid feels calm. "Take a break"
+    // is now its own bottom-nav tab (Pause), so it's removed from this list.
+    val accent = MaterialTheme.colorScheme.primary
     val actions = listOf(
-        QuickAction(Route.Morning.path, Icons.Outlined.WbSunny,    "Morning",      "a gentle start",    Sky),
-        QuickAction(Route.Evening.path, Icons.Outlined.NightsStay, "Evening",      "fill the outer ring", Sand),
-        QuickAction(Route.Breath.path,  Icons.Outlined.Air,        "Breathe",      "4 · 4 · 4 · 4",     Sky),
-        QuickAction(Route.Focus.path,   Icons.Outlined.Coffee,     "Focus",        "25 min",             Coral),
-        QuickAction(Route.Break.path,   Icons.Outlined.Park,       "Take a break", "60 seconds",         Sand)
+        QuickAction(Route.Morning.path, Icons.Outlined.WbSunny,    "Morning", "a gentle start",      accent),
+        QuickAction(Route.Evening.path, Icons.Outlined.NightsStay, "Evening", "fill the outer ring", accent),
+        QuickAction(Route.Breath.path,  Icons.Outlined.Air,        "Breathe", "4 · 4 · 4 · 4",       accent),
+        QuickAction(Route.Focus.path,   Icons.Outlined.Coffee,     "Focus",   "25 min",              accent)
     )
 
     LazyColumn(
@@ -91,7 +96,7 @@ fun HomeScreen(
                 Text(
                     text = "${AppViewModel.dayOfWeekShort().uppercase()} · DAY ${AppViewModel.dayOfYear()}",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Sky
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = greeting,
@@ -103,7 +108,10 @@ fun HomeScreen(
         }
 
         item {
-            IntentionPill(intent = today.intent)
+            IntentionPill(
+                intent = today.intent,
+                onClick = { showIntentionDialog = true }
+            )
         }
 
         item {
@@ -160,5 +168,20 @@ fun HomeScreen(
         }
 
         item { Spacer(Modifier.height(Dimens.ScreenBottomClearance)) }
+    }
+
+    if (showIntentionDialog) {
+        IntentionEditDialog(
+            initial = today.intent,
+            onSave = { text ->
+                viewModel.setIntent(text.trim())
+                showIntentionDialog = false
+            },
+            onClear = {
+                viewModel.setIntent("")
+                showIntentionDialog = false
+            },
+            onDismiss = { showIntentionDialog = false }
+        )
     }
 }

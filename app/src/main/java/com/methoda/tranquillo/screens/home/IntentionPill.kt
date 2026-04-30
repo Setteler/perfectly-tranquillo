@@ -20,25 +20,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.methoda.tranquillo.ui.theme.Sand
 
 /**
- * Full-round outlined pill, warm-gold, showing the current intention.
+ * Full-round outlined pill showing the current intention. Uses the theme
+ * primary so it pops on both dark (sky) and light (deep ocean blue) bgs.
  * When intent is blank we render a hint and a muted dot.
  */
 @Composable
 fun IntentionPill(
     intent: String,
     modifier: Modifier = Modifier,
-    hint: String = "set a gentle intention"
+    hint: String = "set a gentle intention",
+    onClick: (() -> Unit)? = null
 ) {
     val isEmpty = intent.isBlank()
-    val accent = Sand
+    val accent = MaterialTheme.colorScheme.primary
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(100.dp),
         color = accent.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = if (isEmpty) 0.18f else 0.30f))
+        border = BorderStroke(1.dp, accent.copy(alpha = if (isEmpty) 0.40f else 0.55f)),
+        onClick = onClick ?: {},
+        enabled = onClick != null
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
@@ -48,13 +51,13 @@ fun IntentionPill(
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(accent.copy(alpha = if (isEmpty) 0.40f else 0.90f))
+                    .background(accent.copy(alpha = if (isEmpty) 0.65f else 1.0f))
             )
             Spacer(Modifier.width(10.dp))
             Text(
                 text = "INTENTION",
                 style = MaterialTheme.typography.labelSmall,
-                color = accent.copy(alpha = 0.85f)
+                color = accent
             )
             Spacer(Modifier.width(10.dp))
             Text(

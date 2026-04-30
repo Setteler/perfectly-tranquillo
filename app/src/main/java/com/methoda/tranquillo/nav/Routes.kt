@@ -5,6 +5,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.FilterVintage
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Route(val path: String) {
@@ -12,14 +13,14 @@ sealed class Route(val path: String) {
     data object Habits : Route("habits")
     data object Mandala : Route("mandala")
     data object Garden : Route("garden")
+    data object TakeBreak : Route("take_break")
     data object Settings : Route("settings")
 
-    // Quick-action destinations (all placeholder through #4)
+    // Quick-action destinations
     data object Morning : Route("morning")
     data object Evening : Route("evening")
     data object Breath  : Route("breath")
     data object Focus   : Route("focus")
-    data object Break   : Route("break")
 }
 
 data class TabDestination(
@@ -31,6 +32,7 @@ data class TabDestination(
 val TabDestinations: List<TabDestination> = listOf(
     TabDestination(Route.Home, "Home", Icons.Outlined.Home),
     TabDestination(Route.Habits, "Habits", Icons.Outlined.CheckCircle),
+    TabDestination(Route.TakeBreak, "Pause", Icons.Outlined.Spa),
     TabDestination(Route.Mandala, "Mandala", Icons.Outlined.AutoAwesome),
     TabDestination(Route.Garden, "Garden", Icons.Outlined.FilterVintage)
 )

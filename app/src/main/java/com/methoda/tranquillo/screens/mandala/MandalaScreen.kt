@@ -69,7 +69,8 @@ fun MandalaScreen(
             Column {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "YOUR INNER LANDSCAPE",
+                    text = if (phase == Phase.Am) "YOUR INNER LANDSCAPE · MORNING"
+                           else "YOUR INNER LANDSCAPE · EVENING",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -80,13 +81,6 @@ fun MandalaScreen(
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
-        }
-
-        item {
-            PhaseToggle(
-                current = phase,
-                onChange = { viewModel.setPhase(it) }
-            )
         }
 
         item {

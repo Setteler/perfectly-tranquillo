@@ -56,7 +56,7 @@ class PrefsStore(private val context: Context) {
 
     companion object {
         const val DEFAULT_SOUND = true
-        const val DEFAULT_FONT_PAIR = "fraunces"
+        const val DEFAULT_FONT_PAIR = "caveat"
         const val DEFAULT_USER_NAME = "friend"
         const val DEFAULT_PALETTE = "deep_tide"
         const val DEFAULT_NOTIF_MODE = "sound"

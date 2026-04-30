@@ -18,6 +18,7 @@ import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.nav.RootNavHost
 import com.methoda.tranquillo.ui.theme.Palettes
 import com.methoda.tranquillo.ui.theme.PerfectlyTranquilloTheme
+import com.methoda.tranquillo.ui.theme.typographyForFontPair
 
 class MainActivity : ComponentActivity() {
 
@@ -35,8 +36,10 @@ class MainActivity : ComponentActivity() {
         ensureNotificationPermission()
         setContent {
             val paletteId by viewModel.palette.collectAsState()
+            val fontPairId by viewModel.fontPair.collectAsState()
             val palette = Palettes.all.firstOrNull { it.id == paletteId } ?: Palettes.DeepTide
-            PerfectlyTranquilloTheme(palette = palette) {
+            val typography = typographyForFontPair(fontPairId)
+            PerfectlyTranquilloTheme(palette = palette, typography = typography) {
                 RootNavHost(
                     viewModel = viewModel,
                     pendingDeepLinkRoute = pendingDeepLinkRoute

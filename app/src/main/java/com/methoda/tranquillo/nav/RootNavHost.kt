@@ -24,7 +24,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.screens.actions.BreakScreen
 import com.methoda.tranquillo.screens.actions.BreathScreen
 import com.methoda.tranquillo.screens.actions.EveningScreen
 import com.methoda.tranquillo.screens.actions.FocusScreen
@@ -34,6 +33,7 @@ import com.methoda.tranquillo.screens.habits.HabitsScreen
 import com.methoda.tranquillo.screens.home.HomeScreen
 import com.methoda.tranquillo.screens.mandala.MandalaScreen
 import com.methoda.tranquillo.screens.settings.SettingsScreen
+import com.methoda.tranquillo.screens.takebreak.TakeBreakScreen
 import com.methoda.tranquillo.ui.chrome.BottomTabBar
 import com.methoda.tranquillo.ui.chrome.SeaBackground
 import com.methoda.tranquillo.ui.placeholder.PlaceholderScreen
@@ -60,7 +60,7 @@ fun RootNavHost(
     }
 
     val tabRoutes = setOf(
-        Route.Home.path, Route.Habits.path, Route.Mandala.path, Route.Garden.path
+        Route.Home.path, Route.Habits.path, Route.Mandala.path, Route.Garden.path, Route.TakeBreak.path
     )
 
     SeaBackground {
@@ -129,6 +129,12 @@ fun RootNavHost(
                 composable(Route.Garden.path) {
                     GardenScreen(viewModel = viewModel)
                 }
+                composable(Route.TakeBreak.path) {
+                    TakeBreakScreen(
+                        viewModel = viewModel,
+                        onRedirect = { route -> navController.navigate(route) }
+                    )
+                }
                 composable(Route.Settings.path) {
                     SettingsScreen(viewModel = viewModel)
                 }
@@ -153,12 +159,6 @@ fun RootNavHost(
                 }
                 composable(Route.Focus.path) {
                     FocusScreen(
-                        viewModel = viewModel,
-                        onClose = { navController.popBackStack() }
-                    )
-                }
-                composable(Route.Break.path) {
-                    BreakScreen(
                         viewModel = viewModel,
                         onClose = { navController.popBackStack() }
                     )

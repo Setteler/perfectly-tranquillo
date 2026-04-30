@@ -85,14 +85,6 @@ fun PetalSheet(
                         color = MaterialTheme.colorScheme.onBackground
                     )
                 }
-                Text(
-                    text = "×",
-                    style = MaterialTheme.typography.displayMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .padding(horizontal = 8.dp)
-                )
             }
 
             Text(

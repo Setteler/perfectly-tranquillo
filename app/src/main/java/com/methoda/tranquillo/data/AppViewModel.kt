@@ -80,6 +80,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_SOUND
     )
 
+    val fontPair: StateFlow<String> = app.prefs.fontPair.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_FONT_PAIR
+    )
+
     /** ISO date for the day the rest of the app considers "today". Bumped at
      *  midnight by the rollover coroutine in [init]. */
     private val currentDate = MutableStateFlow(isoToday())
@@ -288,6 +292,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setSoundEnabled(enabled: Boolean) {
         viewModelScope.launch { app.prefs.setSound(enabled) }
+    }
+
+    fun setFontPair(id: String) {
+        viewModelScope.launch { app.prefs.setFontPair(id) }
     }
 
     /** Reset today's mandala entries + habit fills + uncheck today's habits. */
