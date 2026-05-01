@@ -138,7 +138,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(6.dp))
             Text(
-                text = "audio plays once you've added the sound files (see project /res/raw)",
+                text = "tap a sound to listen — the speaker icon up top mutes everything",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
             )

@@ -189,6 +189,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
+        // Drive the ambient audio engine from the (sound × ambient) combo.
+        viewModelScope.launch {
+            combine(soundEnabled, ambientSound) { on, id -> on to id }
+                .collect { (on, id) -> app.ambientPlayer.apply(on, id) }
+        }
         // Restore morningDone (in-memory) from persisted morningDoneDate so that
         // re-opening the app same-day after a process death doesn't re-prompt.
         viewModelScope.launch {

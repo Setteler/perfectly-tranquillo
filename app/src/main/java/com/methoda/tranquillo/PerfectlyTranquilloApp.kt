@@ -1,6 +1,7 @@
 package com.methoda.tranquillo
 
 import android.app.Application
+import com.methoda.tranquillo.audio.AmbientPlayer
 import com.methoda.tranquillo.data.AppDatabase
 import com.methoda.tranquillo.data.PrefsStore
 import com.methoda.tranquillo.notifications.HabitReminderScheduler
@@ -14,6 +15,7 @@ class PerfectlyTranquilloApp : Application() {
     val db: AppDatabase by lazy { AppDatabase.get(this) }
     val prefs: PrefsStore by lazy { PrefsStore(this) }
     val reminderScheduler: HabitReminderScheduler by lazy { HabitReminderScheduler(this) }
+    val ambientPlayer: AmbientPlayer by lazy { AmbientPlayer(this) }
 
     override fun onCreate() {
         super.onCreate()
