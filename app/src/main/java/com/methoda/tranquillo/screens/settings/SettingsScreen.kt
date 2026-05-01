@@ -52,6 +52,7 @@ fun SettingsScreen(
     val notifMode by viewModel.notifMode.collectAsState()
     val sound by viewModel.soundEnabled.collectAsState()
     val ambient by viewModel.ambientSound.collectAsState()
+    val notifIcon by viewModel.notifIcon.collectAsState()
 
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearAllDialog by remember { mutableStateOf(false) }
@@ -104,6 +105,17 @@ fun SettingsScreen(
                 hint = "vibration only (system permitting)",
                 selected = notifMode == PrefsStore.NOTIF_VIBRATE,
                 onClick = { viewModel.setNotifMode(PrefsStore.NOTIF_VIBRATE) }
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                text = "ICON",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            NotifIconPickerColumn(
+                selectedId = notifIcon,
+                onSelect = { viewModel.setNotifIcon(it) }
             )
             Spacer(Modifier.height(12.dp))
             ActionRow(

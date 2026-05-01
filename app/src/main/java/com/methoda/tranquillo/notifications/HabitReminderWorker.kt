@@ -51,7 +51,8 @@ class HabitReminderWorker(
         if (remindAt.isNullOrBlank()) return Result.success()
         if (app.prefs.notifModeNow() == PrefsStore.NOTIF_SILENT) return Result.success()
 
-        postNotification(applicationContext, habitId, label, hint)
+        val iconRes = iconResForId(app.prefs.notifIconNow())
+        postNotification(applicationContext, habitId, label, hint, iconRes)
         return Result.success()
     }
 
@@ -60,7 +61,21 @@ class HabitReminderWorker(
         const val KEY_IS_WEEKLY = "is_weekly"
         const val NOTIFICATION_TAG = "habit_reminder"
 
-        fun postNotification(context: Context, habitId: String, label: String, hint: String) {
+        fun iconResForId(id: String): Int = when (id) {
+            "lotus" -> R.drawable.ic_stat_lotus
+            "moon"  -> R.drawable.ic_stat_moon
+            "sun"   -> R.drawable.ic_stat_sun
+            "drop"  -> R.drawable.ic_stat_drop
+            else    -> R.drawable.ic_stat_tranquillo
+        }
+
+        fun postNotification(
+            context: Context,
+            habitId: String,
+            label: String,
+            hint: String,
+            iconRes: Int = R.drawable.ic_stat_tranquillo
+        ) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val granted = ContextCompat.checkSelfPermission(
                     context,
@@ -84,7 +99,7 @@ class HabitReminderWorker(
                 context,
                 NotificationChannelSetup.CHANNEL_HABIT_REMINDERS
             )
-                .setSmallIcon(R.drawable.ic_stat_tranquillo)
+                .setSmallIcon(iconRes)
                 .setColor(0xFFA5C7DE.toInt())
                 .setContentTitle(label)
                 .setContentText(hint.ifBlank { "a small thing — when you're ready" })

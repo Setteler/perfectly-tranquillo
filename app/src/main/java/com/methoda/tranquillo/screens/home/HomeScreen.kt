@@ -56,6 +56,7 @@ fun HomeScreen(
     val today by viewModel.today.collectAsState()
     val userName by viewModel.userName.collectAsState()
     val daily by viewModel.dailyHabits.collectAsState()
+    val dayOfJourney by viewModel.dayOfJourney.collectAsState()
     var showIntentionDialog by remember { mutableStateOf(false) }
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
@@ -96,7 +97,7 @@ fun HomeScreen(
             Column {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "${AppViewModel.dayOfWeekShort().uppercase()} · DAY ${AppViewModel.dayOfYear()}",
+                    text = "${AppViewModel.dayOfWeekShort().uppercase()} · DAY $dayOfJourney",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

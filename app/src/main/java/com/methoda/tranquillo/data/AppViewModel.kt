@@ -89,6 +89,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_AMBIENT_SOUND
     )
 
+    val notifIcon: StateFlow<String> = app.prefs.notifIcon.stateIn(
+        viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_NOTIF_ICON
+    )
+
     val fontPair: StateFlow<String> = app.prefs.fontPair.stateIn(
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_FONT_PAIR
     )
@@ -96,6 +100,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** ISO date for the day the rest of the app considers "today". Bumped at
      *  midnight by the rollover coroutine in [init]. */
     private val currentDate = MutableStateFlow(isoToday())
+
+    /** Days since the user started using the app (or last Clear All) — used
+     *  by the Home eyebrow ("DAY 1", "DAY 12", etc.). 1-based. */
+    val dayOfJourney: StateFlow<Int> =
+        currentDate.flatMapLatest { date ->
+            app.prefs.journeyStartDate.map { start ->
+                if (start.isBlank()) 1
+                else daysBetween(start, date).coerceAtLeast(0) + 1
+            }
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, 1)
 
     /**
      * Whether to gate-show the Morning screen on app open. True if the local
@@ -211,6 +225,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val saved = goodThingDao.forDate(currentDate.value)?.text.orEmpty()
             if (saved.isNotBlank()) goodThing.value = saved
+        }
+        // First-launch seed for the journey day-counter.
+        viewModelScope.launch {
+            val start = app.prefs.journeyStartDate.first()
+            if (start.isBlank()) app.prefs.setJourneyStartDate(currentDate.value)
         }
         // Midnight rollover loop — when crossing 00:00 the in-memory layer
         // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
@@ -352,6 +371,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.prefs.setAmbientSound(id) }
     }
 
+    fun setNotifIcon(id: String) {
+        viewModelScope.launch { app.prefs.setNotifIcon(id) }
+    }
+
     /** Mark Morning seen for today (suppresses the gate). Called by both the
      *  "Begin the day" button and the X dismiss. The button additionally
      *  awards the Moon stone via the existing flow. */
@@ -379,7 +402,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Wipe all rows — mandala, habits, fills, stones. Keeps prefs.
+    /** Wipe all rows — mandala, habits, fills, stones, good things. Resets
+     *  the journey-day counter to 1. Keeps user prefs (palette, name, etc.).
      *  clearAllTables() is a blocking Room call that must run off the main
      *  thread, otherwise it throws IllegalStateException. */
     fun clearAll() {
@@ -388,18 +412,25 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 app.db.clearAllTables()
             }
             HabitSeeder.seedAllIfEmpty(app.db)
+            app.prefs.setJourneyStartDate(currentDate.value)
+            app.prefs.setMorningDoneDate("")
             clearTodayInMemory()
         }
     }
 
-    /** Fire a sample notification immediately (QA hook for #6 / #7 demo button). */
+    /** Fire a sample notification immediately (Settings demo button). */
     fun fireDemoReminder() {
-        com.methoda.tranquillo.notifications.HabitReminderWorker.postNotification(
-            context = app,
-            habitId = "demo",
-            label = "A small thing",
-            hint = "this is what a reminder feels like — gentle."
-        )
+        viewModelScope.launch {
+            val iconRes = com.methoda.tranquillo.notifications.HabitReminderWorker
+                .iconResForId(app.prefs.notifIconNow())
+            com.methoda.tranquillo.notifications.HabitReminderWorker.postNotification(
+                context = app,
+                habitId = "demo",
+                label = "A small thing",
+                hint = "this is what a reminder feels like — gentle.",
+                iconRes = iconRes
+            )
+        }
     }
 
     companion object {
@@ -425,6 +456,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             runCatching { cal.time = DATE_FORMAT.parse(base) ?: return@runCatching }
             cal.add(Calendar.DAY_OF_YEAR, -n)
             return DATE_FORMAT.format(cal.time)
+        }
+
+        /** Days between two ISO dates (b - a). Negative if a > b. */
+        fun daysBetween(a: String, b: String): Int {
+            val ca = runCatching { DATE_FORMAT.parse(a) }.getOrNull() ?: return 0
+            val cb = runCatching { DATE_FORMAT.parse(b) }.getOrNull() ?: return 0
+            val diffMs = cb.time - ca.time
+            return (diffMs / 86_400_000L).toInt()
         }
 
         fun autoPhase(): Phase {

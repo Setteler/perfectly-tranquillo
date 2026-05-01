@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small-icon: sun with rays, white-on-transparent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- center disc -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,7.5 C14.5,7.5 16.5,9.5 16.5,12 C16.5,14.5 14.5,16.5 12,16.5 C9.5,16.5 7.5,14.5 7.5,12 C7.5,9.5 9.5,7.5 12,7.5 Z" />
+    <!-- 8 rays -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11.2,2.0 L12.8,2.0 L12.8,5.2 L11.2,5.2 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11.2,18.8 L12.8,18.8 L12.8,22.0 L11.2,22.0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M2.0,11.2 L5.2,11.2 L5.2,12.8 L2.0,12.8 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18.8,11.2 L22.0,11.2 L22.0,12.8 L18.8,12.8 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4.5,3.4 L5.6,4.5 L4.5,5.6 L3.4,4.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M19.5,18.4 L20.6,19.5 L19.5,20.6 L18.4,19.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M19.5,3.4 L20.6,4.5 L19.5,5.6 L18.4,4.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4.5,18.4 L5.6,19.5 L4.5,20.6 L3.4,19.5 Z" />
+</vector>

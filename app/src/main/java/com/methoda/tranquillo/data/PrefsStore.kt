@@ -37,6 +37,14 @@ class PrefsStore(private val context: Context) {
     val ambientSound: Flow<String> =
         context.dataStore.data.map { it[KEY_AMBIENT_SOUND] ?: DEFAULT_AMBIENT_SOUND }
 
+    /** ISO date the user started using the app (or last reset everything).
+     *  Empty until first read; the AppViewModel seeds it on first launch. */
+    val journeyStartDate: Flow<String> =
+        context.dataStore.data.map { it[KEY_JOURNEY_START_DATE] ?: "" }
+
+    val notifIcon: Flow<String> =
+        context.dataStore.data.map { it[KEY_NOTIF_ICON] ?: DEFAULT_NOTIF_ICON }
+
     suspend fun setSound(enabled: Boolean) {
         context.dataStore.edit { it[KEY_SOUND] = enabled }
     }
@@ -65,6 +73,18 @@ class PrefsStore(private val context: Context) {
         context.dataStore.edit { it[KEY_AMBIENT_SOUND] = id }
     }
 
+    suspend fun setJourneyStartDate(date: String) {
+        context.dataStore.edit { it[KEY_JOURNEY_START_DATE] = date }
+    }
+
+    suspend fun setNotifIcon(id: String) {
+        context.dataStore.edit { it[KEY_NOTIF_ICON] = id }
+    }
+
+    /** Read [notifIcon] eagerly off the datastore — used by Workers. */
+    suspend fun notifIconNow(): String =
+        context.dataStore.data.map { it[KEY_NOTIF_ICON] ?: DEFAULT_NOTIF_ICON }.first()
+
     /** Read [notifMode] eagerly off the datastore — used by Workers running outside the UI. */
     suspend fun notifModeNow(): String =
         context.dataStore.data.map { it[KEY_NOTIF_MODE] ?: DEFAULT_NOTIF_MODE }.first()
@@ -79,6 +99,7 @@ class PrefsStore(private val context: Context) {
         const val DEFAULT_PALETTE = "deep_tide"
         const val DEFAULT_NOTIF_MODE = "sound"
         const val DEFAULT_AMBIENT_SOUND = "none"
+        const val DEFAULT_NOTIF_ICON = "waves"
 
         const val NOTIF_SILENT = "silent"
         const val NOTIF_SOUND = "sound"
@@ -91,5 +112,7 @@ class PrefsStore(private val context: Context) {
         private val KEY_NOTIF_MODE = stringPreferencesKey("notif_mode")
         private val KEY_MORNING_DONE_DATE = stringPreferencesKey("morning_done_date")
         private val KEY_AMBIENT_SOUND = stringPreferencesKey("ambient_sound")
+        private val KEY_JOURNEY_START_DATE = stringPreferencesKey("journey_start_date")
+        private val KEY_NOTIF_ICON = stringPreferencesKey("notif_icon")
     }
 }

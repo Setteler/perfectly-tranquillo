@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small-icon: water drop, white-on-transparent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,2.5 C12,2.5 5,9.5 5,14.5 C5,18.4 8.1,21.5 12,21.5 C15.9,21.5 19,18.4 19,14.5 C19,9.5 12,2.5 12,2.5 Z" />
+</vector>

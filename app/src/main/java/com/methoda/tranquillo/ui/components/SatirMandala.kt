@@ -27,8 +27,12 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.hypot
 
-private val AmBase = Color(0xFFA5C7DE)  // oklch(0.82 0.07 210) approx
-private val PmBase = Color(0xFFE8C57A)  // oklch(0.86 0.09 78) approx
+// AM petals shine like a sun (warm gold), PM petals glow like a moon
+// (silver-blue). Per user request — swaps the prototype's cool/warm scheme.
+private val AmBase = Color(0xFFFFCB57)  // warm sun-gold
+private val PmBase = Color(0xFFC6D5E2)  // cool moonlight silver
+private val AmGlow = Color(0xFFFFEDB1)  // sun rays — soft outer halo
+private val PmGlow = Color(0xFFE7EFF8)  // moon halo — paler still
 private val RingStroke = Color(0xFFF5F1E8).copy(alpha = 0.28f)
 private val CoreColor = Color(0xFFF5F1E8).copy(alpha = 0.20f)
 
@@ -162,10 +166,20 @@ fun SatirMandala(
                 style = Stroke(width = pmBandWidth)
             )
 
-            // AM fill (interpolated alpha)
+            // AM fill — shining sun: soft halo + main fill.
             if (fill.am > 0f) {
+                val a = fill.am.coerceIn(0f, 1f)
                 drawArc(
-                    color = AmBase.copy(alpha = 0.85f * fill.am.coerceIn(0f, 1f)),
+                    color = AmGlow.copy(alpha = 0.55f * a),
+                    startAngle = startA,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(amRect.left, amRect.top),
+                    size = Size(amRect.width, amRect.height),
+                    style = Stroke(width = amBandWidth + 4.dp.toPx())
+                )
+                drawArc(
+                    color = AmBase.copy(alpha = 0.92f * a),
                     startAngle = startA,
                     sweepAngle = sweep,
                     useCenter = false,
@@ -174,10 +188,20 @@ fun SatirMandala(
                     style = Stroke(width = amBandWidth)
                 )
             }
-            // PM fill
+            // PM fill — shining moon: pale halo + cool main fill.
             if (fill.pm > 0f) {
+                val a = fill.pm.coerceIn(0f, 1f)
                 drawArc(
-                    color = PmBase.copy(alpha = 0.85f * fill.pm.coerceIn(0f, 1f)),
+                    color = PmGlow.copy(alpha = 0.55f * a),
+                    startAngle = startA,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(pmRect.left, pmRect.top),
+                    size = Size(pmRect.width, pmRect.height),
+                    style = Stroke(width = pmBandWidth + 4.dp.toPx())
+                )
+                drawArc(
+                    color = PmBase.copy(alpha = 0.92f * a),
                     startAngle = startA,
                     sweepAngle = sweep,
                     useCenter = false,

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Notification small-icon: crescent moon, white-on-transparent. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14.6,2.5 C9.6,2.5 5.5,6.6 5.5,11.6 C5.5,16.6 9.6,20.7 14.6,20.7 C16.7,20.7 18.7,20 20.3,18.7 C19.7,18.8 19.1,18.9 18.5,18.9 C13.5,18.9 9.4,14.8 9.4,9.8 C9.4,7.6 10.2,5.5 11.5,3.9 C12.5,3.4 13.5,2.9 14.6,2.5 Z" />
+</vector>
