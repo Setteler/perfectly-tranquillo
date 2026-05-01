@@ -26,12 +26,12 @@ data class AmbientOption(val id: String, val label: String, val hint: String)
  * silence. Labels are placeholders — rename once you've heard each track.
  */
 val AmbientOptions: List<AmbientOption> = listOf(
-    AmbientOption("none",      "None",     "silence"),
-    AmbientOption("ambient_1", "Sound 1",  "tap to listen"),
-    AmbientOption("ambient_2", "Sound 2",  "tap to listen"),
-    AmbientOption("ambient_3", "Sound 3",  "tap to listen"),
-    AmbientOption("ambient_4", "Sound 4",  "tap to listen"),
-    AmbientOption("ambient_5", "Sound 5",  "tap to listen")
+    AmbientOption("none",      "None",                 "silence"),
+    AmbientOption("ambient_1", "Singing bowls",        "deep, slow tones"),
+    AmbientOption("ambient_2", "I know how to speak",  "spoken words to settle"),
+    AmbientOption("ambient_3", "Rainstorm",            "soft rain, distant thunder"),
+    AmbientOption("ambient_4", "Calm",                 "gentle ambient hush"),
+    AmbientOption("ambient_5", "Ocean waves",          "long swell, foam, distance")
 )
 
 @Composable
