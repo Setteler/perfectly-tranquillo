@@ -22,19 +22,27 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.methoda.tranquillo.data.AmPmFill
+import com.methoda.tranquillo.data.Phase
 import com.methoda.tranquillo.data.ResourceKey
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.hypot
 
-// AM petals shine like a sun (warm gold), PM petals glow like a moon
-// (silver-blue). Per user request — swaps the prototype's cool/warm scheme.
+// Petals shine like a sun (AM, warm gold) / glow like a moon (PM, silver).
 private val AmBase = Color(0xFFFFCB57)  // warm sun-gold
 private val PmBase = Color(0xFFC6D5E2)  // cool moonlight silver
 private val AmGlow = Color(0xFFFFEDB1)  // sun rays — soft outer halo
 private val PmGlow = Color(0xFFE7EFF8)  // moon halo — paler still
 private val RingStroke = Color(0xFFF5F1E8).copy(alpha = 0.28f)
 private val CoreColor = Color(0xFFF5F1E8).copy(alpha = 0.20f)
+
+// Inner core ("heart") shifts with the auto-derived phase:
+//   AM → shining sun (warm yellow → soft amber).
+//   PM → quiet moon (cool silver-blue → pale lavender).
+private val SunCoreInner   = Color(0xFFFFF3B5)
+private val SunCoreMid     = Color(0xFFFFC857)
+private val MoonCoreInner  = Color(0xFFE8F0F8)
+private val MoonCoreMid    = Color(0xFFB0C4DA)
 
 /**
  * Satir mandala — 8 petal wedges with AM / PM half-rings.
@@ -48,7 +56,10 @@ fun SatirMandala(
     highlight: ResourceKey? = null,
     onPetalTap: ((ResourceKey) -> Unit)? = null,
     @Suppress("UNUSED_PARAMETER") showLabels: Boolean = false,
-    animate: Boolean = true
+    animate: Boolean = true,
+    /** Time-of-day phase. Drives the inner-core color: sun-yellow in AM,
+     *  silver-blue in PM. Petal colors are unaffected. */
+    phase: Phase = Phase.Am
 ) {
     val infinite = rememberInfiniteTransition(label = "mandala-breathe")
     val breathe by if (animate) {
@@ -227,13 +238,18 @@ fun SatirMandala(
             )
         }
 
-        // Soft pale core (animated scale via `breathe` multiplier)
+        // Inner core ("heart") — sun in the morning, moon at night. Animated
+        // breath scale gives a gentle pulse. Phase comes from caller (Home /
+        // Mandala pass `today.currentPhase` which auto-derives from the hour).
         val coreR = s * 0.08f * breathe
+        val isAm = phase == Phase.Am
+        val haloInner = if (isAm) SunCoreInner else MoonCoreInner
+        val haloMid   = if (isAm) SunCoreMid   else MoonCoreMid
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    Color(0xFFF5EFD8).copy(alpha = 0.95f),
-                    Color(0xFFE8C57A).copy(alpha = 0.45f),
+                    haloInner.copy(alpha = 0.95f),
+                    haloMid.copy(alpha = 0.45f),
                     Color.Transparent
                 ),
                 center = center,
@@ -243,7 +259,7 @@ fun SatirMandala(
             center = center
         )
         drawCircle(
-            color = CoreColor,
+            color = haloInner.copy(alpha = 0.55f),
             radius = coreR,
             center = center
         )

@@ -131,7 +131,8 @@ fun HomeScreen(
                 SatirMandala(
                     resources = today.resources,
                     size = 240.dp,
-                    animate = true
+                    animate = true,
+                    phase = today.currentPhase
                 )
             }
         }

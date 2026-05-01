@@ -93,7 +93,8 @@ fun MandalaScreen(
                     size = 280.dp,
                     highlight = activeKey,
                     onPetalTap = { key -> activeKey = key },
-                    animate = true
+                    animate = true,
+                    phase = phase
                 )
             }
         }

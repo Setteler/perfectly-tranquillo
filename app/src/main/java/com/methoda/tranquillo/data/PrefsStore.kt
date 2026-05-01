@@ -99,7 +99,7 @@ class PrefsStore(private val context: Context) {
         const val DEFAULT_PALETTE = "deep_tide"
         const val DEFAULT_NOTIF_MODE = "sound"
         const val DEFAULT_AMBIENT_SOUND = "none"
-        const val DEFAULT_NOTIF_ICON = "waves"
+        const val DEFAULT_NOTIF_ICON = "sun"
 
         const val NOTIF_SILENT = "silent"
         const val NOTIF_SOUND = "sound"
