@@ -72,7 +72,10 @@ class PrefsStore(private val context: Context) {
     companion object {
         const val DEFAULT_SOUND = true
         const val DEFAULT_FONT_PAIR = "caveat"
-        const val DEFAULT_USER_NAME = "friend"
+        // Empty default so the Settings field starts blank with a placeholder.
+        // Display layers (e.g. Home greeting) fall back to "friend" when blank.
+        const val DEFAULT_USER_NAME = ""
+        const val USER_NAME_FALLBACK = "friend"
         const val DEFAULT_PALETTE = "deep_tide"
         const val DEFAULT_NOTIF_MODE = "sound"
         const val DEFAULT_AMBIENT_SOUND = "none"

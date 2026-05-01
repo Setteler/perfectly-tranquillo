@@ -226,7 +226,12 @@ private fun UserNameField(
             )
             BasicTextField(
                 value = draft,
-                onValueChange = { draft = it },
+                onValueChange = {
+                    draft = it
+                    // Persist on every edit so the name is saved even if the
+                    // user navigates away without losing focus.
+                    onCommit(it)
+                },
                 singleLine = true,
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     color = MaterialTheme.colorScheme.onBackground
@@ -234,12 +239,17 @@ private fun UserNameField(
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 6.dp)
-                    .onFocusChanged { focus ->
-                        if (!focus.isFocused && draft != value) {
-                            onCommit(draft)
-                        }
+                    .padding(top = 6.dp),
+                decorationBox = { inner ->
+                    if (draft.isEmpty()) {
+                        Text(
+                            text = "your name…",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f)
+                        )
                     }
+                    inner()
+                }
             )
         }
     }

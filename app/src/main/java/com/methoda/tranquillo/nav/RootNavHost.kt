@@ -147,7 +147,19 @@ fun RootNavHost(
                 composable(Route.Home.path) {
                     HomeScreen(
                         viewModel = viewModel,
-                        onActionClick = { route -> navController.navigate(route) }
+                        onActionClick = { route ->
+                            // Tab routes use tab-switch semantics so back returns
+                            // to Home cleanly; action routes push as usual.
+                            if (route in tabRoutes) {
+                                navController.navigate(route) {
+                                    popUpTo(navController.graph.startDestinationId) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            } else {
+                                navController.navigate(route)
+                            }
+                        }
                     )
                 }
                 composable(Route.Habits.path) {

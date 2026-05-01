@@ -16,7 +16,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 
@@ -46,19 +45,19 @@ fun GoodThingCard(
             )
             BasicTextField(
                 value = draft,
-                onValueChange = { draft = it },
+                onValueChange = {
+                    draft = it
+                    // Save on every edit — focus-based saves were dropped when
+                    // the user backed out without blurring.
+                    onCommit(it)
+                },
                 textStyle = MaterialTheme.typography.displaySmall.copy(
                     color = MaterialTheme.colorScheme.onBackground
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .onFocusChanged { focus ->
-                        if (!focus.isFocused && draft != value) {
-                            onCommit(draft)
-                        }
-                    },
+                    .padding(top = 8.dp),
                 decorationBox = { inner ->
                     if (draft.isEmpty()) {
                         Text(

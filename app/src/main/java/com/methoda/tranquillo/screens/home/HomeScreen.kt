@@ -1,5 +1,6 @@
 package com.methoda.tranquillo.screens.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,10 +59,11 @@ fun HomeScreen(
     var showIntentionDialog by remember { mutableStateOf(false) }
 
     val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+    val displayName = userName.ifBlank { "friend" }
     val greeting = when {
-        hour in 5..11 -> "Bloom gently, $userName."
-        hour in 12..17 -> "Soften, $userName."
-        else -> "Drift on, $userName."
+        hour in 5..11 -> "Bloom gently, $displayName."
+        hour in 12..17 -> "Soften, $displayName."
+        else -> "Drift on, $displayName."
     }
 
     val petalsFilled = ResourceKey.orderedClockwise.sumOf { k ->
@@ -116,7 +118,13 @@ fun HomeScreen(
 
         item {
             Box(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        onClick = { onActionClick(Route.Mandala.path) }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 SatirMandala(

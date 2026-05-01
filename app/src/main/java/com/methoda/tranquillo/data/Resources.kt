@@ -9,14 +9,14 @@ enum class ResourceKey {
     Interactional, Nutritional, Contextual, Spiritual;
 
     val label: String get() = when (this) {
-        Physical -> "Body"
-        Intellectual -> "Mind"
-        Emotional -> "Heart"
-        Sensory -> "Senses"
-        Interactional -> "Connection"
-        Nutritional -> "Nourish"
-        Contextual -> "Place"
-        Spiritual -> "Spirit"
+        Physical -> "Physical"
+        Intellectual -> "Intellectual"
+        Emotional -> "Emotional"
+        Sensory -> "Sensual"
+        Interactional -> "Interactional"
+        Nutritional -> "Nutritional"
+        Contextual -> "Contextual"
+        Spiritual -> "Spiritual"
     }
 
     companion object {

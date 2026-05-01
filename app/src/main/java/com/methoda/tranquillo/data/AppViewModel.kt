@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.methoda.tranquillo.PerfectlyTranquilloApp
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -193,6 +195,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val savedDate = app.prefs.morningDoneDate.first()
             if (savedDate == currentDate.value) morningDone.value = true
         }
+        // Restore the "Looking forward to" text from today's Spirit·AM entry.
+        viewModelScope.launch {
+            val entries = repo.entryMapForDate(currentDate.value).first()
+            entries[ResourceKey.Spiritual to Phase.Am]?.resource?.let { savedText ->
+                if (savedText.isNotBlank()) goodThing.value = savedText
+            }
+        }
         // Midnight rollover loop — when crossing 00:00 the in-memory layer
         // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
         // is cleared and `currentDate` advances so all date-keyed flows re-query.
@@ -241,7 +250,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setIntent(text: String) { intent.value = text }
-    fun setGoodThing(text: String) { goodThing.value = text }
+    /** "Looking forward to" — also persists as a Spirit·AM mandala entry so it
+     *  survives app restarts and surfaces in the Garden archive under Spirit. */
+    fun setGoodThing(text: String) {
+        goodThing.value = text
+        viewModelScope.launch {
+            repo.saveEntry(currentDate.value, ResourceKey.Spiritual, Phase.Am, "resource", text.trim())
+        }
+    }
     fun setPhase(p: Phase) { phaseOverride.value = p }
 
     // ---- action flow state (#4) -----------------------------------------
@@ -304,7 +320,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // ---- settings (#7) --------------------------------------------------
 
     fun setUserName(name: String) {
-        viewModelScope.launch { app.prefs.setUserName(name.trim().ifEmpty { PrefsStore.DEFAULT_USER_NAME }) }
+        viewModelScope.launch { app.prefs.setUserName(name.trim()) }
     }
 
     fun setPalette(id: String) {
@@ -348,11 +364,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** Wipe all rows — mandala, habits, fills, stones. Keeps prefs. */
+    /** Wipe all rows — mandala, habits, fills, stones. Keeps prefs.
+     *  clearAllTables() is a blocking Room call that must run off the main
+     *  thread, otherwise it throws IllegalStateException. */
     fun clearAll() {
         viewModelScope.launch {
-            app.db.clearAllTables()
-            // Re-seed default habits so the user isn't stuck on an empty Habits screen.
+            withContext(Dispatchers.IO) {
+                app.db.clearAllTables()
+            }
             HabitSeeder.seedAllIfEmpty(app.db)
             clearTodayInMemory()
         }
