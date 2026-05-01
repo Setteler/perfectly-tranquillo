@@ -45,6 +45,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val app: PerfectlyTranquilloApp = application as PerfectlyTranquilloApp
     private val repo: MandalaRepository = MandalaRepository(app.db.mandalaEntryDao())
     private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
+    private val goodThingDao = app.db.goodThingDao()
     private val habits: HabitsRepository = HabitsRepository(
         habitDao = app.db.habitDao(),
         weeklyHabitDao = app.db.weeklyHabitDao(),
@@ -128,6 +129,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             repo.entriesInRange(isoDaysAgoOf(date, 30), date)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** "Ser emot från" archive — last 30 days of good_thing entries. */
+    val goodThingsArchive: StateFlow<List<GoodThingEntity>> =
+        currentDate.flatMapLatest { date ->
+            goodThingDao.inRange(isoDaysAgoOf(date, 30), date)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /**
      * Today's mandala resources — entry-derived fills *plus* habit-fill bumps
      * (+0.15 per completed mapped habit), *plus* action-flow bumps (#4), all
@@ -200,12 +207,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val savedDate = app.prefs.morningDoneDate.first()
             if (savedDate == currentDate.value) morningDone.value = true
         }
-        // Restore the "Looking forward to" text from today's Spirit·AM entry.
+        // Restore the "Looking forward to" text from the good_things table.
         viewModelScope.launch {
-            val entries = repo.entryMapForDate(currentDate.value).first()
-            entries[ResourceKey.Spiritual to Phase.Am]?.resource?.let { savedText ->
-                if (savedText.isNotBlank()) goodThing.value = savedText
-            }
+            val saved = goodThingDao.forDate(currentDate.value)?.text.orEmpty()
+            if (saved.isNotBlank()) goodThing.value = saved
         }
         // Midnight rollover loop — when crossing 00:00 the in-memory layer
         // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
@@ -255,12 +260,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setIntent(text: String) { intent.value = text }
-    /** "Looking forward to" — also persists as a Spirit·AM mandala entry so it
-     *  survives app restarts and surfaces in the Garden archive under Spirit. */
+    /** "Looking forward to" / Ser emot från — persists in the good_things
+     *  table (its own dedicated section in the Garden, separate from Spirit). */
     fun setGoodThing(text: String) {
         goodThing.value = text
         viewModelScope.launch {
-            repo.saveEntry(currentDate.value, ResourceKey.Spiritual, Phase.Am, "resource", text.trim())
+            val date = currentDate.value
+            val cleaned = text.trim()
+            if (cleaned.isBlank()) goodThingDao.deleteForDate(date)
+            else goodThingDao.upsert(GoodThingEntity(date = date, text = cleaned))
         }
     }
     fun setPhase(p: Phase) { phaseOverride.value = p }
@@ -357,7 +365,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { app.prefs.setFontPair(id) }
     }
 
-    /** Reset today's mandala entries + habit fills + uncheck today's habits. */
+    /** Reset today's mandala entries + habit fills + uncheck today's habits +
+     *  clear today's "Looking forward to". */
     fun resetToday() {
         viewModelScope.launch {
             val today = currentDate.value
@@ -365,6 +374,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             app.db.habitFillDao().deleteAllForDate(today)
             app.db.habitDao().clearLastDoneIfDate(today)
             app.db.weeklyHabitDao().clearLastDoneIfDate(today)
+            goodThingDao.deleteForDate(today)
             clearTodayInMemory()
         }
     }

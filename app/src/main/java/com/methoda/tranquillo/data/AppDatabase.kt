@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,9 +79,10 @@ interface MandalaEntryDao {
         HabitEntity::class,
         WeeklyHabitEntity::class,
         HabitFillEntity::class,
-        StoneEntity::class
+        StoneEntity::class,
+        GoodThingEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -89,9 +91,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun weeklyHabitDao(): WeeklyHabitDao
     abstract fun habitFillDao(): HabitFillDao
     abstract fun stoneDao(): StoneDao
+    abstract fun goodThingDao(): GoodThingDao
 
     companion object {
         private const val DB_NAME = "perfectly_tranquillo.db"
+
+        /** v4 → v5: add the good_things table for "Looking forward to" entries. */
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `good_things` (" +
+                    "`date` TEXT NOT NULL, " +
+                    "`text` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`date`))"
+                )
+            }
+        }
 
         @Volatile private var instance: AppDatabase? = null
 
@@ -109,6 +124,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 DB_NAME
             )
+                .addMigrations(MIGRATION_4_5)
                 .fallbackToDestructiveMigration()
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
