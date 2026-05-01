@@ -20,24 +20,27 @@ object HabitSeeder {
         val day: Int, val streak: Int, val remindAt: String?
     )
 
+    // Streaks all start at 0 — the prototype shipped demo streaks for design
+    // review but in production those looked like fake user history. Reminder
+    // times kept verbatim from the prototype.
     private val DAILY: List<DailySeed> = listOf(
-        DailySeed("no-phone",  "Don't open phone first thing", "15 minutes past waking", 4,  "07:00"),
-        DailySeed("water",     "Drink water",                   "First glass by 10am",   7,  "09:30"),
-        DailySeed("gratitude", "Three good things ahead",       "Any time in morning",   11, "08:15"),
-        DailySeed("break",     "Take a mindful break",          "Between tasks",         2,  "14:00"),
-        DailySeed("workout",   "Move your body",                "20 minutes, any kind",  3,  "17:30"),
-        DailySeed("eat",       "Eat a real meal",               "Slow, unhurried",       5,  null),
-        DailySeed("sleep",     "Sleep by 11:00",                "Phone away by 10:30",   8,  "22:30")
+        DailySeed("no-phone",  "Don't open phone first thing", "15 minutes past waking", 0, "07:00"),
+        DailySeed("water",     "Drink water",                   "First glass by 10am",   0, "09:30"),
+        DailySeed("gratitude", "Three good things ahead",       "Any time in morning",   0, "08:15"),
+        DailySeed("break",     "Take a mindful break",          "Between tasks",         0, "14:00"),
+        DailySeed("workout",   "Move your body",                "20 minutes, any kind",  0, "17:30"),
+        DailySeed("eat",       "Eat a real meal",               "Slow, unhurried",       0, null),
+        DailySeed("sleep",     "Sleep by 11:00",                "Phone away by 10:30",   0, "22:30")
     )
 
     private val WEEKLY: List<WeeklySeed> = listOf(
-        WeeklySeed("therapy",    "Therapy session",   "Mondays, 6pm",      1, 6, "17:45"),
-        WeeklySeed("long-walk",  "A long slow walk",  "Tuesdays, outside", 2, 3, "16:00"),
-        WeeklySeed("call-mom",   "Call mom",          "Tuesdays",          2, 4, "19:00"),
-        WeeklySeed("deep-clean", "Tidy one room",     "Wednesdays",        3, 2, null),
-        WeeklySeed("read",       "Read, just for me", "Thursday evenings", 4, 1, "21:00"),
-        WeeklySeed("meal-prep",  "Meal prep",         "Sundays, midday",   0, 5, null),
-        WeeklySeed("date-night", "Date night",        "Friday evenings",   5, 2, "19:30")
+        WeeklySeed("therapy",    "Therapy session",   "Mondays, 6pm",      1, 0, "17:45"),
+        WeeklySeed("long-walk",  "A long slow walk",  "Tuesdays, outside", 2, 0, "16:00"),
+        WeeklySeed("call-mom",   "Call mom",          "Tuesdays",          2, 0, "19:00"),
+        WeeklySeed("deep-clean", "Tidy one room",     "Wednesdays",        3, 0, null),
+        WeeklySeed("read",       "Read, just for me", "Thursday evenings", 4, 0, "21:00"),
+        WeeklySeed("meal-prep",  "Meal prep",         "Sundays, midday",   0, 0, null),
+        WeeklySeed("date-night", "Date night",        "Friday evenings",   5, 0, "19:30")
     )
 
     suspend fun seedAllIfEmpty(db: AppDatabase) {
