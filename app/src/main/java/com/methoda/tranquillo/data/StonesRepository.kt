@@ -9,6 +9,10 @@ class StonesRepository(private val dao: StoneDao) {
     val allStones: Flow<List<StoneKind>> =
         dao.all().map { rows -> rows.mapNotNull { row -> row.kind.toStoneKindOrNull() } }
 
+    /** Stones awarded since [sinceMs] — used by the Garden jar (resets weekly). */
+    fun stonesSince(sinceMs: Long): Flow<List<StoneKind>> =
+        dao.since(sinceMs).map { rows -> rows.mapNotNull { row -> row.kind.toStoneKindOrNull() } }
+
     val count: Flow<Int> = dao.count()
 
     suspend fun addStone(kind: StoneKind, source: String) {
@@ -20,6 +24,9 @@ class StonesRepository(private val dao: StoneDao) {
             )
         )
     }
+
+    suspend fun countSinceBySource(source: String, sinceMs: Long): Int =
+        dao.countSinceBySource(source, sinceMs)
 
     suspend fun clear() = dao.clear()
 

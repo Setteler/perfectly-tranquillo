@@ -32,7 +32,7 @@ class HabitReminderWorker(
         val isWeekly = inputData.getBoolean(KEY_IS_WEEKLY, false)
         val app = applicationContext as? PerfectlyTranquilloApp ?: return Result.success()
 
-        val today = HabitsRepository.isoToday()
+        val today = HabitsRepository.isoEffectiveToday()
         val (label, hint, doneToday, remindAt, dayOfWeek) = if (isWeekly) {
             val h = app.db.weeklyHabitDao().findById(habitId) ?: return Result.success()
             HabitInfo(h.label, h.hint, h.lastDoneDate == today, h.remindAt, h.dayOfWeek)

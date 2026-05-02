@@ -53,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.data.Phase
 import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.screens.actions.BreakDef
 import com.methoda.tranquillo.screens.actions.Breaks
@@ -107,7 +106,6 @@ fun TakeBreakScreen(
         val c = inProgress
         if (c != null) {
             viewModel.addStone(StoneKind.Coral, source = "break")
-            viewModel.addResourceFill(c.mappedResource, Phase.Pm, 0.22f)
         }
         inProgress = null
         running = false

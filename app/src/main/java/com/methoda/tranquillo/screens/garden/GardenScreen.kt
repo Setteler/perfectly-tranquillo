@@ -25,10 +25,6 @@ import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.ui.components.ShellColor
 import com.methoda.tranquillo.ui.components.StoneKind
 import com.methoda.tranquillo.ui.theme.Dimens
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 
 /**
  * Garden / Progress screen — jar of seashells (one per ritual) + 7-day
@@ -80,10 +76,7 @@ fun GardenScreen(
     }
 }
 
-private fun isoToday(): String {
-    val df = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }
-    return df.format(Date())
-}
+private fun isoToday(): String = com.methoda.tranquillo.data.HabitsRepository.isoEffectiveToday()
 
 @Composable
 private fun GardenHeader(daysTending: Int) {

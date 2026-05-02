@@ -62,12 +62,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val morningDone = MutableStateFlow(false)
     private val eveningDone = MutableStateFlow(false)
 
-    /** Stones collected — persisted to Room (#5). */
-    val stones: StateFlow<List<StoneKind>> = stonesRepo.allStones
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    /** Tick that advances every time we cross the 05:00 day boundary — used
+     *  to recompute the week-start cutoff for the Garden jar. */
+    private val weekTick = MutableStateFlow(0)
 
-    /** Additive per-resource fill bumps awarded by action screens (#4). */
-    private val actionFills = MutableStateFlow<Map<Pair<ResourceKey, Phase>, Float>>(emptyMap())
+    /** Shells collected this week. The week starts on Sunday at 05:00 local
+     *  (so Saturday night → Sunday morning is the reset). */
+    val stones: StateFlow<List<StoneKind>> =
+        weekTick.flatMapLatest { stonesRepo.stonesSince(currentWeekStartMs()) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val userName: StateFlow<String> = app.prefs.userName.stateIn(
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_USER_NAME
@@ -97,9 +100,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope, SharingStarted.Eagerly, PrefsStore.DEFAULT_FONT_PAIR
     )
 
-    /** ISO date for the day the rest of the app considers "today". Bumped at
-     *  midnight by the rollover coroutine in [init]. */
-    private val currentDate = MutableStateFlow(isoToday())
+    /** ISO date for the day the rest of the app considers "today". The day
+     *  boundary is 05:00 local — entries made between 00:00 and 04:59 are
+     *  attributed to the previous calendar date. Bumped at 05:00 by the
+     *  rollover coroutine in [init]. */
+    private val currentDate = MutableStateFlow(isoEffectiveToday())
 
     /** Days since the user started using the app (or last Clear All) — used
      *  by the Home eyebrow ("DAY 1", "DAY 12", etc.). 1-based. */
@@ -150,45 +155,37 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     /**
-     * Today's mandala resources — entry-derived fills *plus* habit-fill bumps
-     * (+0.15 per completed mapped habit), *plus* action-flow bumps (#4), all
-     * capped at 1.0.
+     * Today's mandala resources — derived purely from saved mandala entries.
+     * Petals never auto-fill from habits or action flows; only an explicit
+     * mandala entry adds fill.
      */
     val today: StateFlow<TodayState> = currentDate.flatMapLatest { date ->
         combine(
             listOf(
                 repo.entryMapForDate(date),
                 repo.fillsForDate(date),
-                habits.fillTotalsForDate(date),
                 intent,
                 goodThing,
                 phaseOverride,
-                actionFills,
                 morningMood,
                 morningDone,
                 eveningDone
             )
         ) { values ->
-        @Suppress("UNCHECKED_CAST")
-        val entries = values[0] as Map<Pair<ResourceKey, Phase>, EntryPair>
-        @Suppress("UNCHECKED_CAST")
-        val baseResources = values[1] as Map<ResourceKey, AmPmFill>
-        @Suppress("UNCHECKED_CAST")
-        val habitBumps = values[2] as Map<ResourceKey, Float>
-        val intentText = values[3] as String
-        val goodThingText = values[4] as String
-        val override = values[5] as Phase?
-        @Suppress("UNCHECKED_CAST")
-        val actionBumps = values[6] as Map<Pair<ResourceKey, Phase>, Float>
-        val moodText = values[7] as String
-        val mDone = values[8] as Boolean
-        val eDone = values[9] as Boolean
-
-        val merged = mergeResources(baseResources, habitBumps, actionBumps)
+            @Suppress("UNCHECKED_CAST")
+            val entries = values[0] as Map<Pair<ResourceKey, Phase>, EntryPair>
+            @Suppress("UNCHECKED_CAST")
+            val baseResources = values[1] as Map<ResourceKey, AmPmFill>
+            val intentText = values[2] as String
+            val goodThingText = values[3] as String
+            val override = values[4] as Phase?
+            val moodText = values[5] as String
+            val mDone = values[6] as Boolean
+            val eDone = values[7] as Boolean
 
             TodayState(
                 entries = entries,
-                resources = merged,
+                resources = baseResources,
                 intent = intentText,
                 goodThing = goodThingText,
                 currentPhase = override ?: autoPhase(),
@@ -231,13 +228,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val start = app.prefs.journeyStartDate.first()
             if (start.isBlank()) app.prefs.setJourneyStartDate(currentDate.value)
         }
-        // Midnight rollover loop — when crossing 00:00 the in-memory layer
-        // (intent / goodThing / mood / morningDone / eveningDone / actionFills)
-        // is cleared and `currentDate` advances so all date-keyed flows re-query.
+        // 5am rollover loop — when crossing the day boundary the in-memory
+        // layer (intent / goodThing / mood / morningDone / eveningDone) is
+        // cleared and `currentDate` advances so all date-keyed flows re-query.
+        // weekTick also bumps so the Garden jar recomputes its Sunday cutoff.
         viewModelScope.launch {
             while (isActive) {
-                delay(msUntilNextMidnight() + 1_000L)
-                currentDate.value = isoToday()
+                delay(msUntilNextDayBoundary() + 1_000L)
+                currentDate.value = isoEffectiveToday()
+                weekTick.value = weekTick.value + 1
                 clearTodayInMemory()
             }
         }
@@ -253,7 +252,26 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val date = currentDate.value
             repo.saveEntry(date, key, phase, "resource", resource.trim())
             repo.saveEntry(date, key, phase, "challenge", challenge.trim())
+            maybeAwardMandalaCompleteShell(date)
         }
+    }
+
+    /** If today now has at least one entry for every one of the 8 resource
+     *  petals (regardless of phase) and we haven't already awarded today's
+     *  mandala-complete shell, award one. */
+    private suspend fun maybeAwardMandalaCompleteShell(date: String) {
+        val entries = repo.entriesForDate(date).first()
+        val filledKeys = entries
+            .filter { it.text.isNotBlank() }
+            .mapNotNull { runCatching { ResourceKey.valueOf(it.key) }.getOrNull() }
+            .toSet()
+        if (filledKeys.size < ResourceKey.orderedClockwise.size) return
+        val already = stonesRepo.countSinceBySource(
+            source = MANDALA_COMPLETE_SOURCE,
+            sinceMs = startOfEffectiveTodayMs()
+        )
+        if (already > 0) return
+        stonesRepo.addStone(StoneKind.Shell, source = MANDALA_COMPLETE_SOURCE)
     }
 
     private fun clearTodayInMemory() {
@@ -262,18 +280,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         morningMood.value = ""
         morningDone.value = false
         eveningDone.value = false
-        actionFills.value = emptyMap()
         phaseOverride.value = null
     }
 
-    private fun msUntilNextMidnight(): Long {
+    /** ms until the next 05:00 local — the app's day boundary. */
+    private fun msUntilNextDayBoundary(): Long {
         val now = Calendar.getInstance()
         val next = (now.clone() as Calendar).apply {
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.HOUR_OF_DAY, DAY_BOUNDARY_HOUR)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+            if (timeInMillis <= now.timeInMillis) add(Calendar.DAY_OF_YEAR, 1)
         }
         return (next.timeInMillis - now.timeInMillis).coerceAtLeast(1L)
     }
@@ -301,19 +319,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     /** Append a stone — persisted via [StonesRepository]. */
     fun addStone(kind: StoneKind, source: String = "") {
         viewModelScope.launch { stonesRepo.addStone(kind, source) }
-    }
-
-    /**
-     * Add [delta] to the action-fill layer for ([key], [phase]). Caller does
-     * not need to clamp — merging + display both cap at 1.0.
-     */
-    fun addResourceFill(key: ResourceKey, phase: Phase, delta: Float) {
-        viewModelScope.launch {
-            val cur = actionFills.value
-            val k = key to phase
-            val next = ((cur[k] ?: 0f) + delta).coerceIn(0f, 1f)
-            actionFills.value = cur.toMutableMap().also { it[k] = next }
-        }
     }
 
     // ---- habit actions ---------------------------------------------------
@@ -434,10 +439,68 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
+        /** Tag used on the Shell stone awarded when all 8 petals are filled. */
+        const val MANDALA_COMPLETE_SOURCE = "mandala-complete"
+
         private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
             timeZone = TimeZone.getDefault()
         }
         fun isoToday(): String = DATE_FORMAT.format(Date())
+
+        /** The hour at which a new "day" begins for the app — entries made
+         *  between 00:00 and DAY_BOUNDARY_HOUR-1:59 belong to the previous
+         *  calendar date. */
+        const val DAY_BOUNDARY_HOUR = 5
+
+        /** ISO date treating the night as part of the previous day: when the
+         *  current local hour is < [DAY_BOUNDARY_HOUR], returns yesterday. */
+        fun isoEffectiveToday(): String {
+            val cal = Calendar.getInstance()
+            if (cal.get(Calendar.HOUR_OF_DAY) < DAY_BOUNDARY_HOUR) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+            }
+            return DATE_FORMAT.format(cal.time)
+        }
+
+        /** Epoch-ms of the start of the current week, which is the most recent
+         *  Sunday at 05:00 local. Saturday night up to Sunday 04:59 still
+         *  counts as the previous week (matches [isoEffectiveToday] semantics).
+         */
+        fun currentWeekStartMs(): Long {
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, DAY_BOUNDARY_HOUR)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            // Walk backward to the most recent Sunday at 05:00 that is
+            // <= now. Caps at 7 iterations.
+            val now = System.currentTimeMillis()
+            var safety = 0
+            while ((cal.timeInMillis > now ||
+                    cal.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) &&
+                safety < 8) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+                safety += 1
+            }
+            return cal.timeInMillis
+        }
+
+        /** Epoch-ms of the start of [isoEffectiveToday] — i.e. the most recent
+         *  05:00 boundary. Used to scope per-day counts (e.g. "did we already
+         *  award today's mandala-complete shell?"). */
+        fun startOfEffectiveTodayMs(): Long {
+            val cal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, DAY_BOUNDARY_HOUR)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            if (cal.timeInMillis > System.currentTimeMillis()) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+            }
+            return cal.timeInMillis
+        }
 
         /** Inclusive: morning window is 05:00..13:59 (matches autoPhase). */
         const val MORNING_HOUR_START = 5
@@ -501,27 +564,5 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        fun mergeResources(
-            base: Map<ResourceKey, AmPmFill>,
-            habitBumps: Map<ResourceKey, Float>,
-            actionBumps: Map<Pair<ResourceKey, Phase>, Float> = emptyMap()
-        ): Map<ResourceKey, AmPmFill> {
-            if (habitBumps.isEmpty() && actionBumps.isEmpty()) return base
-            val out = base.toMutableMap()
-            for ((key, bump) in habitBumps) {
-                val current = out[key] ?: AmPmFill()
-                val newPm = (current.pm + bump).coerceIn(0f, 1f)
-                out[key] = current.copy(pm = newPm)
-            }
-            for ((keyPhase, bump) in actionBumps) {
-                val (key, phase) = keyPhase
-                val current = out[key] ?: AmPmFill()
-                out[key] = when (phase) {
-                    Phase.Am -> current.copy(am = (current.am + bump).coerceIn(0f, 1f))
-                    Phase.Pm -> current.copy(pm = (current.pm + bump).coerceIn(0f, 1f))
-                }
-            }
-            return out
-        }
     }
 }

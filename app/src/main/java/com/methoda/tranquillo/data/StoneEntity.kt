@@ -33,6 +33,12 @@ interface StoneDao {
     @Query("SELECT * FROM stones ORDER BY awarded_at ASC")
     fun all(): Flow<List<StoneEntity>>
 
+    @Query("SELECT * FROM stones WHERE awarded_at >= :sinceMs ORDER BY awarded_at ASC")
+    fun since(sinceMs: Long): Flow<List<StoneEntity>>
+
+    @Query("SELECT COUNT(*) FROM stones WHERE source = :source AND awarded_at >= :sinceMs")
+    suspend fun countSinceBySource(source: String, sinceMs: Long): Int
+
     @Query("SELECT COUNT(*) FROM stones")
     fun count(): Flow<Int>
 

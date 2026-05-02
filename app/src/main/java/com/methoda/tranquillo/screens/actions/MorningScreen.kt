@@ -25,8 +25,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.data.Phase
-import com.methoda.tranquillo.data.ResourceKey
 import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.screens.home.IntentionEditDialog
 import java.util.Calendar
@@ -147,7 +145,6 @@ fun MorningScreen(
                     if (!doneAlready) {
                         viewModel.setMorningDone(true)
                         viewModel.addStone(StoneKind.Moon, source = "morning")
-                        viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Am, 0.4f)
                     }
                     viewModel.markMorningSeenToday()
                     onClose()

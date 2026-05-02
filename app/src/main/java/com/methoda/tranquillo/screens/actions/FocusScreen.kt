@@ -28,9 +28,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.data.Phase
-import com.methoda.tranquillo.data.ResourceKey
-import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.ui.theme.Sand
 import com.methoda.tranquillo.ui.theme.Sky
 import kotlinx.coroutines.delay
@@ -66,9 +63,6 @@ fun FocusScreen(
         if (remainingSec <= 0 && running) {
             running = false
             finished = true
-            viewModel.addStone(StoneKind.Deep, source = "focus")
-            viewModel.addResourceFill(ResourceKey.Physical, Phase.Pm, 0.3f)
-            viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Pm, 0.2f)
         }
     }
 
@@ -200,9 +194,6 @@ fun FocusScreen(
                                 text = "End early",
                                 onClick = {
                                     running = false
-                                    viewModel.addStone(StoneKind.Deep, source = "focus")
-                                    viewModel.addResourceFill(ResourceKey.Physical, Phase.Pm, 0.3f * progress.coerceAtLeast(0.4f))
-                                    viewModel.addResourceFill(ResourceKey.Intellectual, Phase.Pm, 0.2f * progress.coerceAtLeast(0.4f))
                                     onClose()
                                 }
                             )

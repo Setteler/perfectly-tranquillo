@@ -41,7 +41,7 @@ class HabitsRepository(
     private val reminderScheduler: HabitReminderScheduler? = null
 ) {
 
-    fun dailyHabitsUi(todayProvider: () -> String = { isoToday() }): Flow<List<HabitUi>> =
+    fun dailyHabitsUi(todayProvider: () -> String = { isoEffectiveToday() }): Flow<List<HabitUi>> =
         habitDao.allDaily().map { list ->
             val today = todayProvider()
             list.map { h ->
@@ -56,7 +56,7 @@ class HabitsRepository(
             }
         }
 
-    fun weeklyHabitsUi(todayProvider: () -> String = { isoToday() }): Flow<List<WeeklyHabitUi>> =
+    fun weeklyHabitsUi(todayProvider: () -> String = { isoEffectiveToday() }): Flow<List<WeeklyHabitUi>> =
         weeklyHabitDao.allWeekly().map { list ->
             val today = todayProvider()
             list.map { h ->
@@ -85,7 +85,7 @@ class HabitsRepository(
 
     // ---- actions ---------------------------------------------------------
 
-    suspend fun toggleDaily(id: String, today: String = isoToday()) {
+    suspend fun toggleDaily(id: String, today: String = isoEffectiveToday()) {
         val h = habitDao.findById(id) ?: return
         if (h.lastDoneDate == today) {
             // Untoggle — undo today's completion. Stone stays (committed).
@@ -114,7 +114,7 @@ class HabitsRepository(
         }
     }
 
-    suspend fun toggleWeekly(id: String, today: String = isoToday()) {
+    suspend fun toggleWeekly(id: String, today: String = isoEffectiveToday()) {
         val h = weeklyHabitDao.findById(id) ?: return
         if (h.lastDoneDate == today) {
             weeklyHabitDao.setLastDone(id, null)
@@ -179,13 +179,13 @@ class HabitsRepository(
 
     suspend fun removeDaily(id: String) {
         habitDao.delete(id)
-        habitFillDao.deleteForHabitOnDate(isoToday(), id)
+        habitFillDao.deleteForHabitOnDate(isoEffectiveToday(), id)
         reminderScheduler?.cancel(id)
     }
 
     suspend fun removeWeekly(id: String) {
         weeklyHabitDao.delete(id)
-        habitFillDao.deleteForHabitOnDate(isoToday(), id)
+        habitFillDao.deleteForHabitOnDate(isoEffectiveToday(), id)
         reminderScheduler?.cancel(id)
     }
 
@@ -209,7 +209,19 @@ class HabitsRepository(
             timeZone = TimeZone.getDefault()
         }
 
+        /** Day boundary at 05:00 — must match [AppViewModel.DAY_BOUNDARY_HOUR]. */
+        private const val DAY_BOUNDARY_HOUR = 5
+
         fun isoToday(): String = ISO.format(Date())
+
+        /** ISO date treating 00:00..04:59 as part of the previous day. */
+        fun isoEffectiveToday(): String {
+            val cal = Calendar.getInstance()
+            if (cal.get(Calendar.HOUR_OF_DAY) < DAY_BOUNDARY_HOUR) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+            }
+            return ISO.format(cal.time)
+        }
 
         fun isoYesterdayOf(today: String): String {
             val cal = Calendar.getInstance()

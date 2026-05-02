@@ -33,8 +33,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.data.Phase
-import com.methoda.tranquillo.data.ResourceKey
 import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.ui.theme.Sand
 import com.methoda.tranquillo.ui.theme.Sky
@@ -71,7 +69,6 @@ fun BreathScreen(
                 running = false
                 finished = true
                 viewModel.addStone(StoneKind.Moon, source = "breath")
-                viewModel.addResourceFill(ResourceKey.Emotional, Phase.Pm, 0.3f)
                 break
             }
         }
@@ -227,7 +224,6 @@ fun BreathScreen(
                             onClick = {
                                 running = false
                                 viewModel.addStone(StoneKind.Moon, source = "breath")
-                                viewModel.addResourceFill(ResourceKey.Emotional, Phase.Pm, 0.3f)
                                 onClose()
                             }
                         )

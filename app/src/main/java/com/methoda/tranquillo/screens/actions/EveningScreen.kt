@@ -173,7 +173,6 @@ fun EveningScreen(
                     if (!doneAlready) {
                         viewModel.setEveningDone(true)
                         viewModel.addStone(StoneKind.Sand, source = "evening")
-                        viewModel.addResourceFill(ResourceKey.Spiritual, Phase.Pm, 0.4f)
                         // Persist the optional one-liner as a Spirit · PM mandala
                         // entry so it surfaces in the Garden archive later.
                         if (note.isNotBlank()) {
