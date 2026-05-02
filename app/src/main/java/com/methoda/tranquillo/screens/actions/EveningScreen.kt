@@ -57,7 +57,7 @@ fun EveningScreen(
 
     ActionScaffold(
         eyebrow = "your evening",
-        title = "Tend the day",
+        title = "Tend your night",
         onClose = onClose,
         modifier = modifier
     ) {
