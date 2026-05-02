@@ -13,8 +13,8 @@ android {
         applicationId = "com.methoda.tranquillo"
         minSdk = 24
         targetSdk = 35
-        versionCode = 26
-        versionName = "0.19.0"
+        versionCode = 27
+        versionName = "0.19.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
