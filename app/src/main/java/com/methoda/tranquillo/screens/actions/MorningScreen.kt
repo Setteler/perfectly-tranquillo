@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.methoda.tranquillo.data.AppViewModel
 import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.screens.home.IntentionEditDialog
-import java.util.Calendar
 
 /**
  * Morning — a soft greeting + today's inspirational quote (revealed by
@@ -47,7 +46,7 @@ fun MorningScreen(
     var revealed by remember { mutableStateOf(doneAlready) }
     var showIntentionDialog by remember { mutableStateOf(false) }
 
-    val dayOfYear = remember { Calendar.getInstance().get(Calendar.DAY_OF_YEAR) }
+    val dayOfYear = remember { AppViewModel.dayOfYear() }
     val quote = remember(dayOfYear) { MorningQuotes.forDayOfYear(dayOfYear) }
     val greeting = "Good morning, $name."
 

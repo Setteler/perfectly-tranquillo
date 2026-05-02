@@ -535,11 +535,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             return if (hour in 5..13) Phase.Am else Phase.Pm
         }
 
-        fun dayOfYear(): Int = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+        fun dayOfYear(): Int = effectiveCalendar().get(Calendar.DAY_OF_YEAR)
+
+        /** A Calendar pinned to [isoEffectiveToday] — the night before 05:00
+         *  is treated as part of the previous day. */
+        private fun effectiveCalendar(): Calendar {
+            val cal = Calendar.getInstance()
+            if (cal.get(Calendar.HOUR_OF_DAY) < DAY_BOUNDARY_HOUR) {
+                cal.add(Calendar.DAY_OF_YEAR, -1)
+            }
+            return cal
+        }
 
         fun dayOfWeekShort(): String {
-            val cal = Calendar.getInstance()
-            return when (cal.get(Calendar.DAY_OF_WEEK)) {
+            return when (effectiveCalendar().get(Calendar.DAY_OF_WEEK)) {
                 Calendar.MONDAY    -> "Monday"
                 Calendar.TUESDAY   -> "Tuesday"
                 Calendar.WEDNESDAY -> "Wednesday"
@@ -552,7 +561,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
 
         /** Today's day-of-week as a 0..6 index (Sunday=0) matching the prototype. */
         fun dayOfWeekIndex(): Int {
-            return when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
+            return when (effectiveCalendar().get(Calendar.DAY_OF_WEEK)) {
                 Calendar.SUNDAY    -> 0
                 Calendar.MONDAY    -> 1
                 Calendar.TUESDAY   -> 2
