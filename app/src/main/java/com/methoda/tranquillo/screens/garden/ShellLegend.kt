@@ -66,6 +66,6 @@ fun ShellLegendRow(
         ShellLegend(ShellColor.Butter, "evenings", counts[ShellColor.Butter] ?: 0)
         ShellLegend(ShellColor.Moss,   "habits",   counts[ShellColor.Moss]   ?: 0)
         ShellLegend(ShellColor.Coral,  "breaks",   counts[ShellColor.Coral]  ?: 0)
-        ShellLegend(ShellColor.Sky,    "focus",    counts[ShellColor.Sky]    ?: 0)
+        ShellLegend(ShellColor.Sand,   "mandala",  counts[ShellColor.Sand]   ?: 0)
     }
 }
