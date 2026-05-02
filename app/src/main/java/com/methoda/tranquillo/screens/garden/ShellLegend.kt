@@ -62,10 +62,10 @@ fun ShellLegendRow(
         horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        ShellLegend(ShellColor.Pearl,  "mornings", counts[ShellColor.Pearl]  ?: 0)
-        ShellLegend(ShellColor.Butter, "evenings", counts[ShellColor.Butter] ?: 0)
-        ShellLegend(ShellColor.Moss,   "habits",   counts[ShellColor.Moss]   ?: 0)
-        ShellLegend(ShellColor.Coral,  "breaks",   counts[ShellColor.Coral]  ?: 0)
-        ShellLegend(ShellColor.Sand,   "mandala",  counts[ShellColor.Sand]   ?: 0)
+        ShellLegend(ShellColor.Pearl,     "mornings", counts[ShellColor.Pearl]     ?: 0)
+        ShellLegend(ShellColor.Sky,       "evenings", counts[ShellColor.Sky]       ?: 0)
+        ShellLegend(ShellColor.Moss,      "habits",   counts[ShellColor.Moss]      ?: 0)
+        ShellLegend(ShellColor.Turquoise, "breaks",   counts[ShellColor.Turquoise] ?: 0)
+        ShellLegend(ShellColor.Sand,      "mandala",  counts[ShellColor.Sand]      ?: 0)
     }
 }

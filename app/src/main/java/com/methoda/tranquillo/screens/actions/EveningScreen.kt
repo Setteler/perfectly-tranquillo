@@ -34,8 +34,6 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.methoda.tranquillo.data.AppViewModel
-import com.methoda.tranquillo.data.Phase
-import com.methoda.tranquillo.data.ResourceKey
 import com.methoda.tranquillo.data.StoneKind
 import com.methoda.tranquillo.ui.theme.Sand
 import com.methoda.tranquillo.ui.theme.Sky
@@ -173,16 +171,6 @@ fun EveningScreen(
                     if (!doneAlready) {
                         viewModel.setEveningDone(true)
                         viewModel.addStone(StoneKind.Sand, source = "evening")
-                        // Persist the optional one-liner as a Spirit · PM mandala
-                        // entry so it surfaces in the Garden archive later.
-                        if (note.isNotBlank()) {
-                            viewModel.saveMandalaEntry(
-                                key = ResourceKey.Spiritual,
-                                phase = Phase.Pm,
-                                resource = note.trim(),
-                                challenge = ""
-                            )
-                        }
                     }
                     onClose()
                 }

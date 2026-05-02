@@ -18,19 +18,20 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
 
-enum class ShellColor { Pearl, Coral, Rose, Butter, Sky, Lilac, Moss, Sand }
+enum class ShellColor { Pearl, Coral, Rose, Butter, Sky, Lilac, Moss, Sand, Turquoise }
 
 private data class ShellPalette(val a: Color, val b: Color, val c: Color, val ridge: Color)
 
 private fun paletteFor(color: ShellColor): ShellPalette = when (color) {
-    ShellColor.Pearl  -> ShellPalette(Color(0xFFF7F1DC), Color(0xFFE2D6B6), Color(0xFFB39A6E), Color(0x59867858))
-    ShellColor.Coral  -> ShellPalette(Color(0xFFF6CCB6), Color(0xFFE0987A), Color(0xFFB6593F), Color(0x66833B25))
-    ShellColor.Rose   -> ShellPalette(Color(0xFFF4D0D6), Color(0xFFD8929D), Color(0xFFA85968), Color(0x59823B4A))
-    ShellColor.Butter -> ShellPalette(Color(0xFFF7E5B0), Color(0xFFE2BF7A), Color(0xFFB48D44), Color(0x59836424))
-    ShellColor.Sky    -> ShellPalette(Color(0xFFD2E3F0), Color(0xFFA1BCD3), Color(0xFF6886A6), Color(0x66465F7B))
-    ShellColor.Lilac  -> ShellPalette(Color(0xFFD7CDE2), Color(0xFFAB97C7), Color(0xFF7560A1), Color(0x66523F77))
-    ShellColor.Moss   -> ShellPalette(Color(0xFFD7E2C5), Color(0xFFA1BC91), Color(0xFF6E885E), Color(0x66465F40))
-    ShellColor.Sand   -> ShellPalette(Color(0xFFEAD9B0), Color(0xFFC9B58D), Color(0xFF7E6E50), Color(0x66523F2A))
+    ShellColor.Pearl     -> ShellPalette(Color(0xFFF7F1DC), Color(0xFFE2D6B6), Color(0xFFB39A6E), Color(0x59867858))
+    ShellColor.Coral     -> ShellPalette(Color(0xFFF6CCB6), Color(0xFFE0987A), Color(0xFFB6593F), Color(0x66833B25))
+    ShellColor.Rose      -> ShellPalette(Color(0xFFF4D0D6), Color(0xFFD8929D), Color(0xFFA85968), Color(0x59823B4A))
+    ShellColor.Butter    -> ShellPalette(Color(0xFFF7E5B0), Color(0xFFE2BF7A), Color(0xFFB48D44), Color(0x59836424))
+    ShellColor.Sky       -> ShellPalette(Color(0xFFD2E3F0), Color(0xFFA1BCD3), Color(0xFF6886A6), Color(0x66465F7B))
+    ShellColor.Lilac     -> ShellPalette(Color(0xFFD7CDE2), Color(0xFFAB97C7), Color(0xFF7560A1), Color(0x66523F77))
+    ShellColor.Moss      -> ShellPalette(Color(0xFFD7E2C5), Color(0xFFA1BC91), Color(0xFF6E885E), Color(0x66465F40))
+    ShellColor.Sand      -> ShellPalette(Color(0xFFEAD9B0), Color(0xFFC9B58D), Color(0xFF7E6E50), Color(0x66523F2A))
+    ShellColor.Turquoise -> ShellPalette(Color(0xFFBDE3DE), Color(0xFF80C0BB), Color(0xFF4D8E89), Color(0x66355F5C))
 }
 
 private fun pseudoRandom01(seed: Int): Float {

@@ -148,9 +148,9 @@ private fun ShellsCard(
 
 private fun StoneKind.toShellColor(): ShellColor = when (this) {
     StoneKind.Moon  -> ShellColor.Pearl
-    StoneKind.Sand  -> ShellColor.Butter
+    StoneKind.Sand  -> ShellColor.Sky
     StoneKind.Jade  -> ShellColor.Moss
-    StoneKind.Coral -> ShellColor.Coral
+    StoneKind.Coral -> ShellColor.Turquoise
     StoneKind.Deep  -> ShellColor.Sky
     StoneKind.Shell -> ShellColor.Sand
 }
