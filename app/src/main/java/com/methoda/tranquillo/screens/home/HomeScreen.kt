@@ -154,6 +154,13 @@ fun HomeScreen(
             )
         }
 
+        item {
+            EveningNoteCard(
+                value = today.eveningNote,
+                onCommit = { viewModel.setEveningNote(it) }
+            )
+        }
+
         // Quick-action grid: 2 columns, rendered as Rows of 2.
         val rows = actions.chunked(2)
         items(rows) { rowActions ->

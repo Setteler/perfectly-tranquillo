@@ -51,7 +51,8 @@ fun EveningScreen(
     modifier: Modifier = Modifier
 ) {
     val today by viewModel.today.collectAsState()
-    var note by remember { mutableStateOf("") }
+    val savedNote = today.eveningNote
+    var note by remember(savedNote) { mutableStateOf(savedNote) }
     val doneAlready = today.eveningDone
 
     ActionScaffold(
@@ -172,6 +173,9 @@ fun EveningScreen(
                         viewModel.setEveningDone(true)
                         viewModel.addStone(StoneKind.Sand, source = "evening")
                     }
+                    // Always persist the note (even when re-opening the screen
+                    // and editing). Blank text deletes today's row.
+                    viewModel.setEveningNote(note)
                     onClose()
                 }
             )

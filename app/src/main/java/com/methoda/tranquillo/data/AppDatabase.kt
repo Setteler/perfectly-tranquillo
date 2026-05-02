@@ -83,9 +83,10 @@ interface MandalaEntryDao {
         WeeklyHabitEntity::class,
         HabitFillEntity::class,
         StoneEntity::class,
-        GoodThingEntity::class
+        GoodThingEntity::class,
+        EveningNoteEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -95,6 +96,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun habitFillDao(): HabitFillDao
     abstract fun stoneDao(): StoneDao
     abstract fun goodThingDao(): GoodThingDao
+    abstract fun eveningNoteDao(): EveningNoteDao
 
     companion object {
         private const val DB_NAME = "perfectly_tranquillo.db"
@@ -104,6 +106,18 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `good_things` (" +
+                    "`date` TEXT NOT NULL, " +
+                    "`text` TEXT NOT NULL, " +
+                    "PRIMARY KEY(`date`))"
+                )
+            }
+        }
+
+        /** v5 → v6: add the evening_notes table for "Tonight I noticed". */
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `evening_notes` (" +
                     "`date` TEXT NOT NULL, " +
                     "`text` TEXT NOT NULL, " +
                     "PRIMARY KEY(`date`))"
@@ -127,7 +141,7 @@ abstract class AppDatabase : RoomDatabase() {
                 AppDatabase::class.java,
                 DB_NAME
             )
-                .addMigrations(MIGRATION_4_5)
+                .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
                 .fallbackToDestructiveMigration()
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {

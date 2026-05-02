@@ -47,6 +47,7 @@ fun GardenScreen(
     val averages by viewModel.sevenDayAverages.collectAsState()
     val archive by viewModel.archiveEntries.collectAsState()
     val goodThings by viewModel.goodThingsArchive.collectAsState()
+    val eveningNotes by viewModel.eveningNotesArchive.collectAsState()
 
     val shells = stones.map { ShellInJar(color = it.toShellColor()) }
     val counts: Map<ShellColor, Int> =
@@ -70,6 +71,8 @@ fun GardenScreen(
         ResourceAveragesCard(averages = averages)
         Spacer(Modifier.height(14.dp))
         SerEmotFranCard(entries = goodThings, todayIso = todayIso)
+        Spacer(Modifier.height(14.dp))
+        NightlyInsightsCard(entries = eveningNotes, todayIso = todayIso)
         Spacer(Modifier.height(14.dp))
         ArchiveCard(entries = archive, todayIso = todayIso)
         Spacer(Modifier.height(Dimens.ScreenBottomClearance))

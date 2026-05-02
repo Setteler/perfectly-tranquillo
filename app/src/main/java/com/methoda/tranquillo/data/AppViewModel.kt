@@ -33,6 +33,7 @@ data class TodayState(
     val resources: Map<ResourceKey, AmPmFill> = emptyMap(),
     val intent: String = "",
     val goodThing: String = "",
+    val eveningNote: String = "",
     val currentPhase: Phase = Phase.Am,
     val morningMood: String = "",
     val morningDone: Boolean = false,
@@ -46,6 +47,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val repo: MandalaRepository = MandalaRepository(app.db.mandalaEntryDao())
     private val stonesRepo: StonesRepository = StonesRepository(app.db.stoneDao())
     private val goodThingDao = app.db.goodThingDao()
+    private val eveningNoteDao = app.db.eveningNoteDao()
     private val habits: HabitsRepository = HabitsRepository(
         habitDao = app.db.habitDao(),
         weeklyHabitDao = app.db.weeklyHabitDao(),
@@ -57,6 +59,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     // In-memory today pieces.
     private val intent = MutableStateFlow("")
     private val goodThing = MutableStateFlow("")
+    private val eveningNote = MutableStateFlow("")
     private val phaseOverride = MutableStateFlow<Phase?>(null)
     private val morningMood = MutableStateFlow("")
     private val morningDone = MutableStateFlow(false)
@@ -154,6 +157,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             goodThingDao.inRange(isoDaysAgoOf(date, 30), date)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** "Nightly insights" archive — last 30 days of evening notes. */
+    val eveningNotesArchive: StateFlow<List<EveningNoteEntity>> =
+        currentDate.flatMapLatest { date ->
+            eveningNoteDao.inRange(isoDaysAgoOf(date, 30), date)
+        }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     /**
      * Today's mandala resources — derived purely from saved mandala entries.
      * Petals never auto-fill from habits or action flows; only an explicit
@@ -166,6 +175,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 repo.fillsForDate(date),
                 intent,
                 goodThing,
+                eveningNote,
                 phaseOverride,
                 morningMood,
                 morningDone,
@@ -178,16 +188,18 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val baseResources = values[1] as Map<ResourceKey, AmPmFill>
             val intentText = values[2] as String
             val goodThingText = values[3] as String
-            val override = values[4] as Phase?
-            val moodText = values[5] as String
-            val mDone = values[6] as Boolean
-            val eDone = values[7] as Boolean
+            val eveningNoteText = values[4] as String
+            val override = values[5] as Phase?
+            val moodText = values[6] as String
+            val mDone = values[7] as Boolean
+            val eDone = values[8] as Boolean
 
             TodayState(
                 entries = entries,
                 resources = baseResources,
                 intent = intentText,
                 goodThing = goodThingText,
+                eveningNote = eveningNoteText,
                 currentPhase = override ?: autoPhase(),
                 morningMood = moodText,
                 morningDone = mDone,
@@ -222,6 +234,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val saved = goodThingDao.forDate(currentDate.value)?.text.orEmpty()
             if (saved.isNotBlank()) goodThing.value = saved
+        }
+        // Restore tonight's evening note from the evening_notes table.
+        viewModelScope.launch {
+            val saved = eveningNoteDao.forDate(currentDate.value)?.text.orEmpty()
+            if (saved.isNotBlank()) eveningNote.value = saved
         }
         // First-launch seed for the journey day-counter.
         viewModelScope.launch {
@@ -285,11 +302,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         val cutoff = isoDaysAgoOf(today, ARCHIVE_RETENTION_DAYS)
         app.db.mandalaEntryDao().deleteOlderThan(cutoff)
         goodThingDao.deleteOlderThan(cutoff)
+        eveningNoteDao.deleteOlderThan(cutoff)
     }
 
     private fun clearTodayInMemory() {
         intent.value = ""
         goodThing.value = ""
+        eveningNote.value = ""
         morningMood.value = ""
         morningDone.value = false
         eveningDone.value = false
@@ -319,6 +338,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val cleaned = text.trim()
             if (cleaned.isBlank()) goodThingDao.deleteForDate(date)
             else goodThingDao.upsert(GoodThingEntity(date = date, text = cleaned))
+        }
+    }
+    /** "Tonight I noticed" — persists in the evening_notes table. Surfaces
+     *  on Home (today's note) and in the Garden archive (last 30 days). */
+    fun setEveningNote(text: String) {
+        eveningNote.value = text
+        viewModelScope.launch {
+            val date = currentDate.value
+            val cleaned = text.trim()
+            if (cleaned.isBlank()) eveningNoteDao.deleteForDate(date)
+            else eveningNoteDao.upsert(EveningNoteEntity(date = date, text = cleaned))
         }
     }
     fun setPhase(p: Phase) { phaseOverride.value = p }
@@ -416,6 +446,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             app.db.habitDao().clearLastDoneIfDate(today)
             app.db.weeklyHabitDao().clearLastDoneIfDate(today)
             goodThingDao.deleteForDate(today)
+            eveningNoteDao.deleteForDate(today)
             clearTodayInMemory()
         }
     }
