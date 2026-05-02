@@ -35,4 +35,7 @@ interface GoodThingDao {
 
     @Query("SELECT * FROM good_things WHERE date >= :startDate AND date <= :endDate ORDER BY date DESC")
     fun inRange(startDate: String, endDate: String): Flow<List<GoodThingEntity>>
+
+    @Query("DELETE FROM good_things WHERE date < :cutoffDate")
+    suspend fun deleteOlderThan(cutoffDate: String)
 }

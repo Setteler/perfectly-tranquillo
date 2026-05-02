@@ -228,6 +228,9 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             val start = app.prefs.journeyStartDate.first()
             if (start.isBlank()) app.prefs.setJourneyStartDate(currentDate.value)
         }
+        // Prune archive rows older than 30 days at app open. Keeps the local
+        // SQLite DB small even after months of use.
+        viewModelScope.launch { pruneArchives(currentDate.value) }
         // 5am rollover loop — when crossing the day boundary the in-memory
         // layer (intent / goodThing / mood / morningDone / eveningDone) is
         // cleared and `currentDate` advances so all date-keyed flows re-query.
@@ -238,6 +241,7 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 currentDate.value = isoEffectiveToday()
                 weekTick.value = weekTick.value + 1
                 clearTodayInMemory()
+                pruneArchives(currentDate.value)
             }
         }
     }
@@ -272,6 +276,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         )
         if (already > 0) return
         stonesRepo.addStone(StoneKind.Shell, source = MANDALA_COMPLETE_SOURCE)
+    }
+
+    /** Delete archive rows older than the 30-day display window. Called at
+     *  app open and at every 5am rollover. The DB stays bounded regardless of
+     *  how long the app is used. */
+    private suspend fun pruneArchives(today: String) {
+        val cutoff = isoDaysAgoOf(today, ARCHIVE_RETENTION_DAYS)
+        app.db.mandalaEntryDao().deleteOlderThan(cutoff)
+        goodThingDao.deleteOlderThan(cutoff)
     }
 
     private fun clearTodayInMemory() {
@@ -441,6 +454,11 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
         /** Tag used on the Shell stone awarded when all 8 petals are filled. */
         const val MANDALA_COMPLETE_SOURCE = "mandala-complete"
+
+        /** Garden archive (mandala entries + good_things) shows the last 30
+         *  days. Rows older than this are physically deleted from SQLite at
+         *  app open and at the 5am rollover, so the DB stays bounded. */
+        const val ARCHIVE_RETENTION_DAYS = 30
 
         private val DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
             timeZone = TimeZone.getDefault()
